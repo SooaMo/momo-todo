@@ -2,63 +2,82 @@ import { useState, useRef } from 'react'
 import HelpModal from './HelpModal'
 
 const POSITION_OPTIONS = ['left', 'center', 'right']
+const RESIZE_OPTIONS = ['fill', 'fit', 'tile']
+const TEXT_COLORS = [
+  { label: 'White', value: '#ffffff' },
+  { label: 'Black', value: '#000000' },
+  { label: 'Primary', value: 'var(--color-primary)' },
+  { label: 'Accent', value: 'var(--color-accent)' },
+]
+const BG_COLORS = [
+  { label: 'None', value: 'none' },
+  { label: 'White', value: '#ffffff' },
+  { label: 'Black', value: '#000000' },
+  { label: 'Primary', value: 'var(--color-primary)' },
+  { label: 'Secondary', value: 'var(--color-secondary)' },
+  { label: 'Accent', value: 'var(--color-accent)' },
+]
+const THEMES = [
+  { id: 'mint', label: 'Mint', color: '#94bba9' },
+  { id: 'ocean', label: 'Ocean', color: '#7ba7bc' },
+  { id: 'lavender', label: 'Lavender', color: '#9b8ec4' },
+  { id: 'dark', label: 'Dark', color: '#2a3442' },
+]
 
 function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
   const inputRef = useRef(null)
+  const colorInputRef = useRef(null)
 
   const visible = settings[`${imageKey}-visible`] !== false
   const position = settings[`${imageKey}-position`] || 'center'
+  const resize = settings[`${imageKey}-resize`] || 'fill'
   const image = settings[imageKey] || null
+  const text = settings[`${imageKey}-text`] !== undefined
+    ? settings[`${imageKey}-text`]
+    : "let's get things done ✦"
+  const textPosition = settings[`${imageKey}-text-position`] || 'left'
+  const textColor = settings[`${imageKey}-text-color`] || '#ffffff'
+  const bgColor = settings[`${imageKey}-bg-color`] || 'none'
+  const bgColorCustom = settings[`${imageKey}-bg-color-custom`] || '#ffffff'
+
+  const resolvedBgColor = bgColor === 'custom'
+    ? bgColorCustom
+    : bgColor === 'none' ? undefined : bgColor
 
   const handleUpload = (e) => {
     const file = e.target.files[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => {
-      onSettingsChange({ [`${imageKey}`]: ev.target.result })
-    }
+    reader.onload = (ev) => onSettingsChange({ [imageKey]: ev.target.result })
     reader.readAsDataURL(file)
   }
 
-  const handleRemove = () => {
-    onSettingsChange({ [imageKey]: null })
-  }
-
-  const handleToggleVisible = () => {
-    onSettingsChange({ [`${imageKey}-visible`]: !visible })
-  }
-
-  const handlePosition = (pos) => {
-    onSettingsChange({ [`${imageKey}-position`]: pos })
-  }
+  const handleRemove = () => onSettingsChange({ [imageKey]: null })
+  const handleToggleVisible = () => onSettingsChange({ [`${imageKey}-visible`]: !visible })
 
   return (
     <div className="settings-banner-section">
       <div className="settings-banner-header">
         <span className="settings-banner-label">{label}</span>
-        <button
-          className={`settings-toggle ${visible ? 'on' : 'off'}`}
-          onClick={handleToggleVisible}
-        >
+        <button className={`settings-toggle ${visible ? 'on' : 'off'}`} onClick={handleToggleVisible}>
           {visible ? 'ON' : 'OFF'}
         </button>
       </div>
 
       {visible && (
         <div className="settings-banner-controls">
-          <div
-            className="settings-banner-preview"
-            style={{
-              backgroundImage: image ? `url(${image})` : undefined,
-              backgroundColor: image ? undefined : 'var(--color-secondary)',
-              backgroundSize: 'auto 100%',
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: position,
-            }}
-          >
-            {!image && <span className="settings-banner-empty">No custom image</span>}
+          {/* Preview */}
+          <div className="settings-banner-preview" style={{
+            backgroundImage: image ? `url(${image})` : undefined,
+            backgroundColor: resolvedBgColor || (image ? undefined : 'var(--color-secondary)'),
+            backgroundSize: resize === 'fit' ? 'contain' : resize === 'tile' ? 'auto' : 'cover',
+            backgroundRepeat: resize === 'tile' ? 'repeat' : 'no-repeat',
+            backgroundPosition: position,
+          }}>
+            {!image && !resolvedBgColor && <span className="settings-banner-empty">No custom image</span>}
           </div>
 
+          {/* Upload / Reset */}
           <div className="settings-banner-btns">
             <button className="settings-sm-btn" onClick={() => inputRef.current?.click()}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -79,6 +98,7 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
             )}
           </div>
 
+          {/* Position */}
           <div className="settings-position">
             <span className="settings-position-label">Position</span>
             <div className="settings-position-btns">
@@ -86,10 +106,121 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
                 <button
                   key={p}
                   className={`settings-pos-btn ${position === p ? 'active' : ''}`}
-                  onClick={() => handlePosition(p)}
+                  onClick={() => onSettingsChange({ [`${imageKey}-position`]: p })}
                 >
                   {p}
                 </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Resize */}
+          <div className="settings-position">
+            <span className="settings-position-label">Resize</span>
+            <div className="settings-position-btns">
+              {RESIZE_OPTIONS.map(r => (
+                <button
+                  key={r}
+                  className={`settings-pos-btn ${resize === r ? 'active' : ''}`}
+                  onClick={() => onSettingsChange({ [`${imageKey}-resize`]: r })}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Background color */}
+          <div className="settings-position">
+            <span className="settings-position-label">Background</span>
+            <div className="settings-text-colors">
+              {BG_COLORS.map(c => (
+                <button
+                  key={c.value}
+                  className={`settings-color-btn ${bgColor === c.value ? 'active' : ''}`}
+                  style={{
+                    backgroundColor:
+                      c.value === 'none' ? 'transparent'
+                      : c.value === 'var(--color-primary)' ? 'var(--color-primary)'
+                      : c.value === 'var(--color-secondary)' ? 'var(--color-secondary)'
+                      : c.value === 'var(--color-accent)' ? 'var(--color-accent)'
+                      : c.value,
+                    border: ['none', '#ffffff'].includes(c.value) ? '1px solid var(--color-secondary)' : 'none',
+                  }}
+                  onClick={() => onSettingsChange({ [`${imageKey}-bg-color`]: c.value })}
+                  title={c.label}
+                >
+                  {c.value === 'none' && <span style={{ fontSize: '0.6rem', color: 'var(--color-text-light)' }}>∅</span>}
+                </button>
+              ))}
+              {/* Custom color picker */}
+              <label
+                className={`settings-color-btn custom-color-btn ${bgColor === 'custom' ? 'active' : ''}`}
+                title="Custom"
+                style={{ background: bgColor === 'custom' ? bgColorCustom : 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' }}
+              >
+                <input
+                  ref={colorInputRef}
+                  type="color"
+                  value={bgColorCustom}
+                  onChange={e => onSettingsChange({
+                    [`${imageKey}-bg-color`]: 'custom',
+                    [`${imageKey}-bg-color-custom`]: e.target.value,
+                  })}
+                  style={{ opacity: 0, position: 'absolute', width: 0, height: 0 }}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="help-divider" />
+
+          {/* Text */}
+          <div className="form-group">
+            <label className="settings-position-label">Text (optional)</label>
+            <input
+              className="form-input"
+              type="text"
+              placeholder="let's get things done ✦"
+              value={text}
+              onChange={e => onSettingsChange({ [`${imageKey}-text`]: e.target.value })}
+            />
+          </div>
+
+          {/* Text align */}
+          <div className="settings-position">
+            <span className="settings-position-label">Text align</span>
+            <div className="settings-position-btns">
+              {POSITION_OPTIONS.map(p => (
+                <button
+                  key={p}
+                  className={`settings-pos-btn ${textPosition === p ? 'active' : ''}`}
+                  onClick={() => onSettingsChange({ [`${imageKey}-text-position`]: p })}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Text color */}
+          <div className="settings-position">
+            <span className="settings-position-label">Text color</span>
+            <div className="settings-text-colors">
+              {TEXT_COLORS.map(c => (
+                <button
+                  key={c.value}
+                  className={`settings-color-btn ${textColor === c.value ? 'active' : ''}`}
+                  style={{
+                    backgroundColor:
+                      c.value === 'var(--color-primary)' ? 'var(--color-primary)'
+                      : c.value === 'var(--color-accent)' ? 'var(--color-accent)'
+                      : c.value,
+                    border: c.value === '#ffffff' ? '1px solid var(--color-secondary)' : 'none',
+                  }}
+                  onClick={() => onSettingsChange({ [`${imageKey}-text-color`]: c.value })}
+                  title={c.label}
+                />
               ))}
             </div>
           </div>
@@ -101,23 +232,20 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
 }
 
 function SettingsModal({ onClose }) {
-  const [tab, setTab] = useState('banners')
+  const [tab, setTab] = useState('graphic')
   const [showHelp, setShowHelp] = useState(false)
+  const [currentTheme, setCurrentTheme] = useState(() => localStorage.getItem('momo-theme') || 'mint')
 
-  // Load current settings into local state
   const [settings, setSettings] = useState(() => ({
   'momo-banner-top': localStorage.getItem('momo-banner-top') || null,
   'momo-banner-top-visible': localStorage.getItem('momo-banner-top-visible') !== 'false',
-  'momo-banner-top-position': localStorage.getItem('momo-banner-top-position') || 'center',
-  'momo-banner-bottom': localStorage.getItem('momo-banner-bottom') || null,
-  'momo-banner-bottom-visible': localStorage.getItem('momo-banner-bottom-visible') !== 'false',
-  'momo-banner-bottom-position': localStorage.getItem('momo-banner-bottom-position') || 'center',
-  'momo-banner-calendar-month-bottom': localStorage.getItem('momo-banner-calendar-month-bottom') || null,
-  'momo-banner-calendar-month-bottom-visible': localStorage.getItem('momo-banner-calendar-month-bottom-visible') !== 'false',
-  'momo-banner-calendar-month-bottom-position': localStorage.getItem('momo-banner-calendar-month-bottom-position') || 'center',
-  'momo-banner-calendar-week-bottom': localStorage.getItem('momo-banner-calendar-week-bottom') || null,
-  'momo-banner-calendar-week-bottom-visible': localStorage.getItem('momo-banner-calendar-week-bottom-visible') !== 'false',
-  'momo-banner-calendar-week-bottom-position': localStorage.getItem('momo-banner-calendar-week-bottom-position') || 'center',
+  'momo-banner-top-position': localStorage.getItem('momo-banner-top-position') || 'right',
+  'momo-banner-top-resize': localStorage.getItem('momo-banner-top-resize') || 'fit',
+  'momo-banner-top-text': localStorage.getItem('momo-banner-top-text') ?? "let's get things done ✦",
+  'momo-banner-top-text-position': localStorage.getItem('momo-banner-top-text-position') || 'left',
+  'momo-banner-top-text-color': localStorage.getItem('momo-banner-top-text-color') || '#000000',
+  'momo-banner-top-bg-color': localStorage.getItem('momo-banner-top-bg-color') || '#ffffff',
+  'momo-banner-top-bg-color-custom': localStorage.getItem('momo-banner-top-bg-color-custom') || '#ffffff',
 }))
 
   const handleSettingsChange = (updates) => {
@@ -126,12 +254,10 @@ function SettingsModal({ onClose }) {
 
   const handleSave = () => {
     Object.entries(settings).forEach(([key, value]) => {
-      if (value === null) {
-        localStorage.removeItem(key)
-      } else {
-        localStorage.setItem(key, value)
-      }
+      if (value === null) localStorage.removeItem(key)
+      else localStorage.setItem(key, String(value))
     })
+    localStorage.setItem('momo-theme', currentTheme)
     onClose()
     window.location.reload()
   }
@@ -151,7 +277,7 @@ function SettingsModal({ onClose }) {
           </div>
 
           <div className="settings-tabs">
-            {['banners', 'help', 'about'].map(t => (
+            {['graphic', 'help', 'about'].map(t => (
               <button
                 key={t}
                 className={`settings-tab ${tab === t ? 'active' : ''}`}
@@ -163,37 +289,41 @@ function SettingsModal({ onClose }) {
           </div>
 
           <div className="modal-body">
-            {tab === 'banners' && (
-  <div className="settings-section">
-    <BannerSetting
-      imageKey="momo-banner-top"
-      label="Top Banner (Today)"
-      settings={settings}
-      onSettingsChange={handleSettingsChange}
-    />
-    <div className="help-divider" />
-    <BannerSetting
-      imageKey="momo-banner-bottom"
-      label="Bottom Banner (Today)"
-      settings={settings}
-      onSettingsChange={handleSettingsChange}
-    />
-    <div className="help-divider" />
-    <BannerSetting
-      imageKey="momo-banner-calendar-month-bottom"
-      label="Bottom Banner (Calendar - Month)"
-      settings={settings}
-      onSettingsChange={handleSettingsChange}
-    />
-    <div className="help-divider" />
-    <BannerSetting
-      imageKey="momo-banner-calendar-week-bottom"
-      label="Bottom Banner (Calendar - Week)"
-      settings={settings}
-      onSettingsChange={handleSettingsChange}
-    />
-  </div>
-)}
+            {tab === 'graphic' && (
+              <div className="settings-section">
+                <div className="settings-banner-section">
+                  <div className="settings-banner-header">
+                    <span className="settings-banner-label">Theme</span>
+                  </div>
+                  <div className="settings-theme-grid">
+                    {THEMES.map(t => (
+                      <button
+                        key={t.id}
+                        className={`settings-theme-btn ${currentTheme === t.id ? 'active' : ''}`}
+                        onClick={() => setCurrentTheme(t.id)}
+                      >
+                        <span className="theme-dot" style={{ backgroundColor: t.color }} />
+                        <span>{t.label}</span>
+                        {currentTheme === t.id && (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto' }}>
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="help-divider" />
+
+                <BannerSetting
+                  imageKey="momo-banner-top"
+                  label="Banner (Today)"
+                  settings={settings}
+                  onSettingsChange={handleSettingsChange}
+                />
+              </div>
+            )}
 
             {tab === 'help' && (
               <div className="settings-section">
@@ -232,7 +362,7 @@ function SettingsModal({ onClose }) {
             )}
           </div>
 
-          {tab === 'banners' && (
+          {tab === 'graphic' && (
             <div className="modal-footer">
               <button className="btn-cancel" onClick={onClose}>Cancel</button>
               <button className="btn-submit" onClick={handleSave}>Save</button>
@@ -241,9 +371,7 @@ function SettingsModal({ onClose }) {
         </div>
       </div>
 
-      {showHelp && (
-        <HelpModal onClose={() => setShowHelp(false)} />
-      )}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
     </>
   )
 }

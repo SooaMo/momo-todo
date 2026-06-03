@@ -5,6 +5,9 @@ import CalendarView from './components/CalendarView'
 import ArchiveModal from './components/ArchiveModal'
 import HelpModal from './components/HelpModal'
 import SettingsModal from './components/SettingsModal'
+import StickerLayer from './components/StickerLayer'
+import StickerPanel from './components/StickerPanel'
+import StartupModal from './components/StartupModal'
 
 const STORAGE_KEY = 'momo-todos'
 const THEME_KEY = 'momo-theme'
@@ -72,9 +75,7 @@ function loadTodos() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
     return saved ? JSON.parse(saved) : []
-  } catch {
-    return []
-  }
+  } catch { return [] }
 }
 
 function saveTodos(todos) {
@@ -86,9 +87,14 @@ function App() {
   const [showArchive, setShowArchive] = useState(false)
   const [todos, setTodos] = useState(loadTodos)
   const [mainView, setMainView] = useState('todo')
+  const [calView, setCalView] = useState('month')
   const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'mint')
-  const [showHelp, setShowHelp] = useState(() => !localStorage.getItem('momo-visited'))
+  const [showHelp, setShowHelp] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [stickerPanelOpen, setStickerPanelOpen] = useState(false)
+  const [stickerMode, setStickerMode] = useState(false)
+  const [savedWidth, setSavedWidth] = useState(null)
+  const [showStartupPrompt, setShowStartupPrompt] = useState(false)
 
   useEffect(() => {
     applyTheme(theme)
@@ -99,6 +105,33 @@ function App() {
     saveTodos(todos)
   }, [todos])
 
+  useEffect(() => {
+  window.electronAPI?.onShowStartupPrompt(() => {
+    setShowStartupPrompt(true)
+  })
+  window.electronAPI?.onShowHelp(() => {
+    setShowHelp(true)
+  })
+}, [])
+
+  const handleToggleStickerPanel = async () => {
+    const next = !stickerPanelOpen
+    if (next) {
+      const size = await window.electronAPI?.getWindowSize()
+      const currentWidth = size?.width || 460
+      setSavedWidth(currentWidth)
+      document.documentElement.style.setProperty('--main-width', `${currentWidth}px`)
+      window.electronAPI?.resizeWindow(currentWidth + 210)
+    } else {
+      document.documentElement.style.removeProperty('--main-width')
+      window.electronAPI?.resizeWindow(savedWidth || 460)
+    }
+    setStickerPanelOpen(next)
+    setStickerMode(next)
+  }
+
+  const pageKey = mainView === 'todo' ? 'today' : `calendar-${calView}`
+
   return (
     <div className={`app-container ${theme === 'dark' ? 'dark-theme' : ''}`}>
       <TopBar
@@ -107,18 +140,35 @@ function App() {
         onOpenArchive={() => setShowArchive(true)}
         mainView={mainView}
         setMainView={setMainView}
-        theme={theme}
-        setTheme={setTheme}
-        onOpenHelp={() => setShowHelp(true)}
         onOpenSettings={() => setShowSettings(true)}
+        stickerPanelOpen={stickerPanelOpen}
+        onToggleStickerPanel={handleToggleStickerPanel}
       />
-      <main className="main-content">
-        {mainView === 'todo' ? (
-          <TodoList todos={todos} setTodos={setTodos} />
-        ) : (
-          <CalendarView todos={todos} setTodos={setTodos} />
+
+      <div className="app-body">
+        <main className="main-content">
+          {mainView === 'todo' ? (
+            <TodoList todos={todos} setTodos={setTodos} />
+          ) : (
+            <CalendarView
+              todos={todos}
+              setTodos={setTodos}
+              calView={calView}
+              setCalView={setCalView}
+            />
+          )}
+        </main>
+
+        <StickerLayer pageKey={pageKey} stickerMode={stickerMode} />
+
+        {stickerPanelOpen && (
+          <StickerPanel
+            onClose={handleToggleStickerPanel}
+            pageKey={pageKey}
+          />
         )}
-      </main>
+      </div>
+
       {showArchive && (
         <ArchiveModal
           onClose={() => setShowArchive(false)}
@@ -132,7 +182,14 @@ function App() {
         }} />
       )}
       {showSettings && (
-       <SettingsModal onClose={() => setShowSettings(false)} />
+        <SettingsModal
+          onClose={() => setShowSettings(false)}
+          currentTheme={theme}
+          onThemeChange={setTheme}
+        />
+      )}
+      {showStartupPrompt && (
+        <StartupModal onClose={() => setShowStartupPrompt(false)} />
       )}
     </div>
   )

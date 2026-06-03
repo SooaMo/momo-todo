@@ -1,28 +1,50 @@
 import { useRef, useState } from 'react'
 import catImg from '../assets/cat.png'
 
-const POSITION_OPTIONS = [
-  { id: 'center', label: 'Center' },
-  { id: 'top', label: 'Top' },
-  { id: 'bottom', label: 'Bottom' },
-  { id: 'left', label: 'Left' },
-  { id: 'right', label: 'Right' },
-]
-
 function BannerImage({ imageKey, className }) {
   const inputRef = useRef(null)
   const [hovered, setHovered] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
-
-  const visible = localStorage.getItem(`${imageKey}-visible`) !== 'false'
-
-if (!visible) return null
 
   const saved = localStorage.getItem(imageKey)
-  const savedPosition = localStorage.getItem(`${imageKey}-position`) || 'center'
-  const [position, setPosition] = useState(savedPosition)
+  const visible = localStorage.getItem(`${imageKey}-visible`) !== 'false'
+  
+  const position = localStorage.getItem(`${imageKey}-position`) || 'right'
+  const resize = localStorage.getItem(`${imageKey}-resize`) || 'fit'
+  const text = localStorage.getItem(`${imageKey}-text`) ?? "let's get things done ✦"
+  const textPosition = localStorage.getItem(`${imageKey}-text-position`) || 'left'
+  const textColor = localStorage.getItem(`${imageKey}-text-color`) || '#000000'
+  const bgColor = localStorage.getItem(`${imageKey}-bg-color`) || '#ffffff'
+  const bgColorCustom = localStorage.getItem(`${imageKey}-bg-color-custom`) || '#ffffff'
 
-  const isDefault = !saved
+  const resolvedBgColor = bgColor === 'custom'
+    ? bgColorCustom
+    : bgColor === 'none' ? undefined : bgColor
+
+  if (!visible) return null
+
+  const src = saved || catImg
+
+  const getBgStyle = () => {
+    const base = {
+      backgroundImage: `url(${src})`,
+      backgroundRepeat: 'no-repeat',
+      backgroundColor: resolvedBgColor || undefined,
+    }
+    if (resize === 'tile') return { ...base, backgroundSize: 'auto', backgroundRepeat: 'repeat', backgroundPosition: 'center' }
+    if (resize === 'fit') return { ...base, backgroundSize: 'contain', backgroundPosition: position }
+    return { ...base, backgroundSize: 'cover', backgroundPosition: position }
+  }
+
+  const getTextStyle = () => {
+    const base = {
+      position: 'absolute',
+      top: '50%',
+      color: textColor,
+    }
+    if (textPosition === 'center') return { ...base, left: '50%', transform: 'translateY(-50%) translateX(-50%)', textAlign: 'center', width: '80%' }
+    if (textPosition === 'right') return { ...base, right: '1rem', textAlign: 'right', transform: 'translateY(-50%)' }
+    return { ...base, left: '1rem', textAlign: 'left', transform: 'translateY(-50%)' }
+  }
 
   const handleUpload = (e) => {
     const file = e.target.files[0]
@@ -35,104 +57,43 @@ if (!visible) return null
     reader.readAsDataURL(file)
   }
 
-  const handleRemove = () => {
+  const handleRemove = (e) => {
+    e.stopPropagation()
     localStorage.removeItem(imageKey)
     window.location.reload()
   }
 
-  const handlePositionChange = (pos) => {
-    setPosition(pos)
-    localStorage.setItem(`${imageKey}-position`, pos)
-  }
-
-  const bgStyle = isDefault
-  ? {
-      backgroundColor: '#1a1a2e',
-      backgroundImage: `url(${catImg})`,
-      backgroundSize: 'auto 100%',
-      backgroundRepeat: 'no-repeat',
-      backgroundPosition: 'right center',
-    }
-  : {
-      backgroundImage: `url(${saved})`,
-      backgroundSize: 'auto 100%',
-      backgroundRepeat: 'no-repeat',
-      backgroundPosition: position,
-    }
-
   return (
     <div
       className={`banner-image ${className || ''}`}
-      style={bgStyle}
+      style={getBgStyle()}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); setShowSettings(false) }}
+      onMouseLeave={() => setHovered(false)}
     >
-      {/* Default banner left text */}
-      {isDefault && (
-        <div className="banner-default-text">
-          <span>hello there</span>
-          <span className="banner-sub">click ✏️ to customize</span>
+      {text && (
+        <div className="banner-text" style={getTextStyle()}>
+          {text}
         </div>
       )}
 
       {hovered && (
         <div className="banner-actions">
-          <button
-            className="banner-btn"
-            onClick={() => inputRef.current?.click()}
-            title="Upload image"
-          >
+          <button className="banner-btn" onClick={() => inputRef.current?.click()} title="Change image">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
           </button>
-          {!isDefault && (
-            <>
-              <button
-                className="banner-btn"
-                onClick={() => setShowSettings(prev => !prev)}
-                title="Position"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
-                </svg>
-              </button>
-              <button
-                className="banner-btn banner-remove"
-                onClick={handleRemove}
-                title="Reset to default"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                  <path d="M3 3v5h5"/>
-                </svg>
-              </button>
-            </>
+          {saved && (
+            <button className="banner-btn banner-remove" onClick={handleRemove} title="Reset">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+            </button>
           )}
         </div>
       )}
-
-      {/* Position settings panel */}
-      {showSettings && (
-        <div className="banner-settings" onClick={e => e.stopPropagation()}>
-          <span className="banner-settings-title">Position</span>
-          <div className="banner-settings-options">
-            {POSITION_OPTIONS.map(p => (
-              <button
-                key={p.id}
-                className={`banner-settings-btn ${position === p.id ? 'active' : ''}`}
-                onClick={() => handlePositionChange(p.id)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUpload} />
     </div>
   )

@@ -284,7 +284,6 @@ function TodoList({ todos, setTodos }) {
         + Add Todo
       </button>
 
-      <BannerImage imageKey="momo-banner-bottom" className="banner-bottom" />
 
       {showModal && (
         <AddTodoModal onClose={() => setShowModal(false)} onAdd={handleAdd} />

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import AddTodoModal from './AddTodoModal'
-import BannerImage from './BannerImage'
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -43,10 +42,9 @@ function getDateSpanType(todo, date) {
   return 'middle'
 }
 
-function CalendarView({ todos, setTodos }) {
+function CalendarView({ todos, setTodos, calView, setCalView }) {
   const today = new Date()
   const [currentDate, setCurrentDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1))
-  const [calView, setCalView] = useState('month')
   const [selectedDate, setSelectedDate] = useState(today)
   const [editTodo, setEditTodo] = useState(null)
 
@@ -231,7 +229,6 @@ function CalendarView({ todos, setTodos }) {
               )
             })}
           </div>
-          <BannerImage imageKey="momo-banner-calendar-month-bottom" className="banner-bottom" />
         </>
       )}
 
@@ -309,7 +306,6 @@ function CalendarView({ todos, setTodos }) {
               )}
             </div>
           </div>
-          <BannerImage imageKey="momo-banner-calendar-week-bottom" className="banner-bottom" />
         </>
       )}
 
