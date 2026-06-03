@@ -40,7 +40,13 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "MomoTodo"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "SooaMo",
+      "repo": "momo-todo"
     }
+    
   },
   "dependencies": {
     "@dnd-kit/core": "^6.0.0",
