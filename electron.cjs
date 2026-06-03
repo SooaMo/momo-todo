@@ -1,8 +1,7 @@
 const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, shell } = require('electron')
 const path = require('path')
 const Store = require('electron-store')
-const { autoUpdater } = require('electron-updater')
-
+const https = require('https')
 
 const store = new Store()
 
@@ -10,30 +9,39 @@ let mainWindow
 let tray
 let updateAvailable = false
 
-// Auto updater settings
-autoUpdater.autoDownload = false
-autoUpdater.autoInstallOnAppQuit = false
+function checkForUpdates() {
+  const options = {
+    hostname: 'api.github.com',
+    path: '/repos/SooaMo/momo-todo/releases/latest',
+    headers: { 'User-Agent': 'MomoTodo' }
+  }
 
-autoUpdater.on('update-available', (info) => {
-  updateAvailable = true
-  mainWindow.webContents.send('update-available', info)
-})
+  https.get(options, (res) => {
+    let data = ''
+    res.on('data', chunk => data += chunk)
+    res.on('end', () => {
+      try {
+        const release = JSON.parse(data)
+        const latestVersion = release.tag_name?.replace('v', '')
+        const currentVersion = app.getVersion()
 
-autoUpdater.on('update-not-available', () => {
-  mainWindow.webContents.send('update-not-available')
-})
-
-autoUpdater.on('download-progress', (progress) => {
-  mainWindow.webContents.send('update-download-progress', progress)
-})
-
-autoUpdater.on('update-downloaded', (info) => {
-  mainWindow.webContents.send('update-downloaded', info)
-})
-
-autoUpdater.on('error', (err) => {
-  mainWindow.webContents.send('update-error', err.message)
-})
+        if (latestVersion && latestVersion !== currentVersion) {
+          updateAvailable = true
+          mainWindow.webContents.send('update-available', {
+            version: latestVersion,
+            url: release.html_url
+          })
+        } else {
+          mainWindow.webContents.send('update-not-available')
+        }
+      } catch (e) {
+        mainWindow.webContents.send('update-error')
+      }
+    })
+  }).on('error', () => {
+    mainWindow.webContents.send('update-error')
+  })
+}
 
 function createTray() {
   const iconPath = app.isPackaged
@@ -55,18 +63,12 @@ function createTray() {
   const contextMenu = Menu.buildFromTemplate([
     {
       label: 'Open MomoTodo',
-      click: () => {
-        mainWindow.show()
-        mainWindow.focus()
-      }
+      click: () => { mainWindow.show(); mainWindow.focus() }
     },
     { type: 'separator' },
     {
       label: 'Quit',
-      click: () => {
-        app.isQuiting = true
-        app.quit()
-      }
+      click: () => { app.isQuiting = true; app.quit() }
     }
   ])
 
@@ -110,6 +112,8 @@ function createWindow() {
     alwaysOnTop: false,
   })
 
+  Menu.setApplicationMenu(null)
+
   const isDev = !app.isPackaged
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173')
@@ -128,8 +132,6 @@ function createWindow() {
     app.isQuiting = true
     app.quit()
   })
-
-  
 }
 
 app.whenReady().then(() => {
@@ -145,11 +147,8 @@ app.whenReady().then(() => {
       store.set('helpShown', true)
     }
 
-    // 업데이트 확인 (빌드된 앱에서만)
     if (app.isPackaged) {
-      setTimeout(() => {
-        autoUpdater.checkForUpdates()
-      }, 3000)
+      setTimeout(() => checkForUpdates(), 3000)
     }
   })
 })
@@ -157,13 +156,9 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {})
 app.on('before-quit', () => { app.isQuiting = true })
 app.on('activate', () => {
-  if (mainWindow) {
-    mainWindow.show()
-    mainWindow.focus()
-  }
+  if (mainWindow) { mainWindow.show(); mainWindow.focus() }
 })
 
-// IPC handlers
 ipcMain.handle('toggle-always-on-top', () => {
   const current = mainWindow.isAlwaysOnTop()
   mainWindow.setAlwaysOnTop(!current)
@@ -196,25 +191,15 @@ ipcMain.handle('dismiss-startup-prompt', () => {
   store.set('startupPromptShown', true)
 })
 
+ipcMain.handle('check-for-updates', () => {
+  checkForUpdates()
+})
+
+ipcMain.handle('get-update-available', () => updateAvailable)
+
 ipcMain.handle('open-external', async (event, url) => {
   await shell.openExternal(url)
   return true
 })
 
-ipcMain.handle('check-for-updates', () => {
-  if (app.isPackaged) {
-    autoUpdater.checkForUpdates()
-  } else {
-    mainWindow.webContents.send('update-not-available')
-  }
-})
-
-ipcMain.handle('download-update', () => {
-  autoUpdater.downloadUpdate()
-})
-
-ipcMain.handle('install-update', () => {
-  autoUpdater.quitAndInstall()
-})
-
-ipcMain.handle('get-update-available', () => updateAvailable)
+ipcMain.handle('get-app-version', () => app.getVersion())

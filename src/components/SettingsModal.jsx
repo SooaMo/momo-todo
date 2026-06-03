@@ -255,7 +255,6 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
 
 function UpdateSection() {
   const [status, setStatus] = useState('idle')
-  const [progress, setProgress] = useState(0)
   const [updateInfo, setUpdateInfo] = useState(null)
 
   useEffect(() => {
@@ -266,14 +265,6 @@ function UpdateSection() {
     window.electronAPI?.onUpdateNotAvailable(() => {
       setStatus('latest')
       setTimeout(() => setStatus('idle'), 3000)
-    })
-    window.electronAPI?.onUpdateDownloadProgress((_, p) => {
-      setStatus('downloading')
-      setProgress(Math.round(p.percent))
-    })
-    window.electronAPI?.onUpdateDownloaded((_, info) => {
-      setStatus('downloaded')
-      setUpdateInfo(info)
     })
     window.electronAPI?.onUpdateError(() => {
       setStatus('error')
@@ -290,13 +281,10 @@ function UpdateSection() {
     window.electronAPI?.checkForUpdates()
   }
 
-  const handleDownload = () => {
-    setStatus('downloading')
-    window.electronAPI?.downloadUpdate()
-  }
-
-  const handleInstall = () => {
-    window.electronAPI?.installUpdate()
+  const handleGoToRelease = () => {
+    window.electronAPI?.openExternal(
+      updateInfo?.url || 'https://github.com/SooaMo/momo-todo/releases/latest'
+    )
   }
 
   return (
@@ -319,24 +307,13 @@ function UpdateSection() {
       {status === 'available' && (
         <div className="update-available">
           <p className="update-status update-new">🎉 v{updateInfo?.version} is available!</p>
-          <button className="update-btn update-btn-accent" onClick={handleDownload}>
-            Download Update
-          </button>
-        </div>
-      )}
-      {status === 'downloading' && (
-        <div className="update-downloading">
-          <p className="update-status">Downloading... {progress}%</p>
-          <div className="update-progress-bar">
-            <div className="update-progress-fill" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
-      )}
-      {status === 'downloaded' && (
-        <div className="update-available">
-          <p className="update-status update-ok">✓ Ready to install v{updateInfo?.version}</p>
-          <button className="update-btn update-btn-accent" onClick={handleInstall}>
-            Restart & Install
+          <button className="update-btn update-btn-accent" onClick={handleGoToRelease}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Download on GitHub
           </button>
         </div>
       )}
@@ -351,7 +328,11 @@ function SettingsModal({ onClose }) {
   const [tab, setTab] = useState('graphic')
   const [showHelp, setShowHelp] = useState(false)
   const [currentTheme, setCurrentTheme] = useState(() => localStorage.getItem('momo-theme') || 'mint')
-  const appVersion = '1.0.0'
+  const [appVersion, setAppVersion] = useState('...')
+
+useEffect(() => {
+  window.electronAPI?.getAppVersion?.().then(v => setAppVersion(v))
+}, [])
 
   const [settings, setSettings] = useState(() => ({
     'momo-banner-top': localStorage.getItem('momo-banner-top') || null,
