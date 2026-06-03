@@ -1,7 +1,8 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } = require('electron')
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, shell } = require('electron')
 const path = require('path')
 const Store = require('electron-store')
 const { autoUpdater } = require('electron-updater')
+
 
 const store = new Store()
 
@@ -127,6 +128,8 @@ function createWindow() {
     app.isQuiting = true
     app.quit()
   })
+
+  
 }
 
 app.whenReady().then(() => {
@@ -191,6 +194,11 @@ ipcMain.handle('set-login-item', (event, enable) => {
 
 ipcMain.handle('dismiss-startup-prompt', () => {
   store.set('startupPromptShown', true)
+})
+
+ipcMain.handle('open-external', async (event, url) => {
+  await shell.openExternal(url)
+  return true
 })
 
 ipcMain.handle('check-for-updates', () => {
