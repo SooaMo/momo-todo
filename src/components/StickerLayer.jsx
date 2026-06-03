@@ -3,45 +3,60 @@ import { useState, useRef, useEffect } from 'react'
 const DEFAULT_SIZE = 100
 
 function StickerLayer({ pageKey, stickerMode }) {
-  const [stickers, setStickers] = useState([])
+  const [stickers, setStickers] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`momo-stickers-placed-${pageKey}`)
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
+  })
   const [selectedId, setSelectedId] = useState(null)
   const [resizing, setResizing] = useState(null)
   const layerRef = useRef(null)
+  const pageKeyRef = useRef(pageKey)
+  const isLoadingRef = useRef(false)
 
   useEffect(() => {
-  const handleCleared = (e) => {
-    if (e.detail.pageKey === pageKey) {
-      setStickers([])
+    if (pageKeyRef.current !== pageKey) {
+      pageKeyRef.current = pageKey
+      isLoadingRef.current = true
+      try {
+        const saved = localStorage.getItem(`momo-stickers-placed-${pageKey}`)
+        setStickers(saved ? JSON.parse(saved) : [])
+      } catch {
+        setStickers([])
+      }
       setSelectedId(null)
+      setTimeout(() => { isLoadingRef.current = false }, 0)
     }
-  }
-  window.addEventListener('stickers-cleared', handleCleared)
-  return () => window.removeEventListener('stickers-cleared', handleCleared)
-}, [pageKey])
+  }, [pageKey])
 
   useEffect(() => {
+    if (isLoadingRef.current) return
     localStorage.setItem(`momo-stickers-placed-${pageKey}`, JSON.stringify(stickers))
   }, [stickers, pageKey])
 
-  // Resize mouse events
+  useEffect(() => {
+    const handleCleared = (e) => {
+      if (e.detail.pageKey === pageKey) {
+        setStickers([])
+        setSelectedId(null)
+      }
+    }
+    window.addEventListener('stickers-cleared', handleCleared)
+    return () => window.removeEventListener('stickers-cleared', handleCleared)
+  }, [pageKey])
+
   useEffect(() => {
     if (!resizing) return
-
     const handleMouseMove = (e) => {
-      const { id, startX, startY, startW, startH } = resizing
+      const { id, startX, startW } = resizing
       const dx = e.clientX - startX
-      const dy = e.clientY - startY
-      const delta = Math.max(dx, dy)
-      const newSize = Math.max(40, Math.min(300, startW + delta))
+      const newSize = Math.max(40, Math.min(300, startW + dx))
       setStickers(prev => prev.map(s =>
         s.id === id ? { ...s, size: Math.round(newSize) } : s
       ))
     }
-
-    const handleMouseUp = () => {
-      setResizing(null)
-    }
-
+    const handleMouseUp = () => setResizing(null)
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
     return () => {
@@ -54,7 +69,6 @@ function StickerLayer({ pageKey, stickerMode }) {
 
   const handleDrop = (e) => {
     e.preventDefault()
-
     const placedId = e.dataTransfer.getData('placed-sticker')
     if (placedId) {
       const id = parseInt(placedId)
@@ -69,7 +83,6 @@ function StickerLayer({ pageKey, stickerMode }) {
       ))
       return
     }
-
     const data = e.dataTransfer.getData('sticker')
     if (data) {
       const { src } = JSON.parse(data)
@@ -102,9 +115,7 @@ function StickerLayer({ pageKey, stickerMode }) {
     setResizing({
       id: sticker.id,
       startX: e.clientX,
-      startY: e.clientY,
       startW: sticker.size || DEFAULT_SIZE,
-      startH: sticker.size || DEFAULT_SIZE,
     })
   }
 
@@ -148,7 +159,6 @@ function StickerLayer({ pageKey, stickerMode }) {
             />
             {isSelected && stickerMode && (
               <>
-                {/* Delete button */}
                 <button
                   className="sticker-delete-btn"
                   onClick={e => { e.stopPropagation(); handleDelete(sticker.id) }}
@@ -158,7 +168,6 @@ function StickerLayer({ pageKey, stickerMode }) {
                     <line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
                 </button>
-                {/* Resize handle */}
                 <div
                   className="sticker-resize-handle"
                   onMouseDown={e => handleResizeStart(e, sticker)}
