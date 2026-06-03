@@ -1,11 +1,38 @@
 const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } = require('electron')
 const path = require('path')
 const Store = require('electron-store')
+const { autoUpdater } = require('electron-updater')
 
 const store = new Store()
 
 let mainWindow
 let tray
+let updateAvailable = false
+
+// Auto updater settings
+autoUpdater.autoDownload = false
+autoUpdater.autoInstallOnAppQuit = false
+
+autoUpdater.on('update-available', (info) => {
+  updateAvailable = true
+  mainWindow.webContents.send('update-available', info)
+})
+
+autoUpdater.on('update-not-available', () => {
+  mainWindow.webContents.send('update-not-available')
+})
+
+autoUpdater.on('download-progress', (progress) => {
+  mainWindow.webContents.send('update-download-progress', progress)
+})
+
+autoUpdater.on('update-downloaded', (info) => {
+  mainWindow.webContents.send('update-downloaded', info)
+})
+
+autoUpdater.on('error', (err) => {
+  mainWindow.webContents.send('update-error', err.message)
+})
 
 function createTray() {
   const iconPath = app.isPackaged
@@ -96,10 +123,10 @@ function createWindow() {
   mainWindow.on('resize', saveBounds)
   mainWindow.on('move', saveBounds)
 
-  mainWindow.on('close', (e) => {
-  app.isQuiting = true
-  app.quit()
-})
+  mainWindow.on('close', () => {
+    app.isQuiting = true
+    app.quit()
+  })
 }
 
 app.whenReady().then(() => {
@@ -107,26 +134,25 @@ app.whenReady().then(() => {
   createTray()
 
   mainWindow.webContents.once('did-finish-load', () => {
-    // 시작 프로그램 팝업
     if (!store.get('startupPromptShown')) {
       mainWindow.webContents.send('show-startup-prompt', app.getLoginItemSettings().openAtLogin)
     }
-    // Help 팝업 — electron-store 기반으로 체크
     if (!store.get('helpShown')) {
       mainWindow.webContents.send('show-help')
       store.set('helpShown', true)
     }
+
+    // 업데이트 확인 (빌드된 앱에서만)
+    if (app.isPackaged) {
+      setTimeout(() => {
+        autoUpdater.checkForUpdates()
+      }, 3000)
+    }
   })
 })
 
-app.on('window-all-closed', () => {
-  // 트레이가 있으면 종료 안 함
-})
-
-app.on('before-quit', () => {
-  app.isQuiting = true
-})
-
+app.on('window-all-closed', () => {})
+app.on('before-quit', () => { app.isQuiting = true })
 app.on('activate', () => {
   if (mainWindow) {
     mainWindow.show()
@@ -134,6 +160,7 @@ app.on('activate', () => {
   }
 })
 
+// IPC handlers
 ipcMain.handle('toggle-always-on-top', () => {
   const current = mainWindow.isAlwaysOnTop()
   mainWindow.setAlwaysOnTop(!current)
@@ -141,6 +168,7 @@ ipcMain.handle('toggle-always-on-top', () => {
 })
 
 ipcMain.handle('minimize-window', () => mainWindow.minimize())
+
 ipcMain.handle('close-window', () => {
   app.isQuiting = true
   app.quit()
@@ -164,3 +192,21 @@ ipcMain.handle('set-login-item', (event, enable) => {
 ipcMain.handle('dismiss-startup-prompt', () => {
   store.set('startupPromptShown', true)
 })
+
+ipcMain.handle('check-for-updates', () => {
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdates()
+  } else {
+    mainWindow.webContents.send('update-not-available')
+  }
+})
+
+ipcMain.handle('download-update', () => {
+  autoUpdater.downloadUpdate()
+})
+
+ipcMain.handle('install-update', () => {
+  autoUpdater.quitAndInstall()
+})
+
+ipcMain.handle('get-update-available', () => updateAvailable)

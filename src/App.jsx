@@ -95,6 +95,7 @@ function App() {
   const [stickerMode, setStickerMode] = useState(false)
   const [savedWidth, setSavedWidth] = useState(null)
   const [showStartupPrompt, setShowStartupPrompt] = useState(false)
+  const [hasUpdate, setHasUpdate] = useState(false)
 
   useEffect(() => {
     applyTheme(theme)
@@ -106,13 +107,21 @@ function App() {
   }, [todos])
 
   useEffect(() => {
-  window.electronAPI?.onShowStartupPrompt(() => {
-    setShowStartupPrompt(true)
-  })
-  window.electronAPI?.onShowHelp(() => {
-    setShowHelp(true)
-  })
-}, [])
+    window.electronAPI?.onShowStartupPrompt(() => {
+      setShowStartupPrompt(true)
+    })
+    window.electronAPI?.onShowHelp(() => {
+      setShowHelp(true)
+    })
+    window.electronAPI?.onUpdateAvailable(() => {
+      setHasUpdate(true)
+    })
+
+    // 이미 업데이트 감지됐는지 확인
+    window.electronAPI?.getUpdateAvailable?.().then(avail => {
+      if (avail) setHasUpdate(true)
+    })
+  }, [])
 
   const handleToggleStickerPanel = async () => {
     const next = !stickerPanelOpen
@@ -143,6 +152,7 @@ function App() {
         onOpenSettings={() => setShowSettings(true)}
         stickerPanelOpen={stickerPanelOpen}
         onToggleStickerPanel={handleToggleStickerPanel}
+        hasUpdate={hasUpdate}
       />
 
       <div className="app-body">
@@ -176,17 +186,10 @@ function App() {
         />
       )}
       {showHelp && (
-        <HelpModal onClose={() => {
-          localStorage.setItem('momo-visited', 'true')
-          setShowHelp(false)
-        }} />
+        <HelpModal onClose={() => setShowHelp(false)} />
       )}
       {showSettings && (
-        <SettingsModal
-          onClose={() => setShowSettings(false)}
-          currentTheme={theme}
-          onThemeChange={setTheme}
-        />
+        <SettingsModal onClose={() => setShowSettings(false)} />
       )}
       {showStartupPrompt && (
         <StartupModal onClose={() => setShowStartupPrompt(false)} />

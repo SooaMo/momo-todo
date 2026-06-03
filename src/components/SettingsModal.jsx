@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import HelpModal from './HelpModal'
 
 const POSITION_OPTIONS = ['left', 'center', 'right']
@@ -159,7 +159,6 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
                   {c.value === 'none' && <span style={{ fontSize: '0.6rem', color: 'var(--color-text-light)' }}>∅</span>}
                 </button>
               ))}
-              {/* Custom color picker */}
               <label
                 className={`settings-color-btn custom-color-btn ${bgColor === 'custom' ? 'active' : ''}`}
                 title="Custom"
@@ -254,10 +253,105 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
   )
 }
 
+function UpdateSection() {
+  const [status, setStatus] = useState('idle')
+  const [progress, setProgress] = useState(0)
+  const [updateInfo, setUpdateInfo] = useState(null)
+
+  useEffect(() => {
+    window.electronAPI?.onUpdateAvailable((_, info) => {
+      setStatus('available')
+      setUpdateInfo(info)
+    })
+    window.electronAPI?.onUpdateNotAvailable(() => {
+      setStatus('latest')
+      setTimeout(() => setStatus('idle'), 3000)
+    })
+    window.electronAPI?.onUpdateDownloadProgress((_, p) => {
+      setStatus('downloading')
+      setProgress(Math.round(p.percent))
+    })
+    window.electronAPI?.onUpdateDownloaded((_, info) => {
+      setStatus('downloaded')
+      setUpdateInfo(info)
+    })
+    window.electronAPI?.onUpdateError(() => {
+      setStatus('error')
+      setTimeout(() => setStatus('idle'), 3000)
+    })
+
+    window.electronAPI?.getUpdateAvailable?.().then(avail => {
+      if (avail) setStatus('available')
+    })
+  }, [])
+
+  const handleCheck = () => {
+    setStatus('checking')
+    window.electronAPI?.checkForUpdates()
+  }
+
+  const handleDownload = () => {
+    setStatus('downloading')
+    window.electronAPI?.downloadUpdate()
+  }
+
+  const handleInstall = () => {
+    window.electronAPI?.installUpdate()
+  }
+
+  return (
+    <div className="update-section">
+      {status === 'idle' && (
+        <button className="update-btn" onClick={handleCheck}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+          Check for Updates
+        </button>
+      )}
+      {status === 'checking' && (
+        <p className="update-status">Checking for updates...</p>
+      )}
+      {status === 'latest' && (
+        <p className="update-status update-ok">✓ You're up to date!</p>
+      )}
+      {status === 'available' && (
+        <div className="update-available">
+          <p className="update-status update-new">🎉 v{updateInfo?.version} is available!</p>
+          <button className="update-btn update-btn-accent" onClick={handleDownload}>
+            Download Update
+          </button>
+        </div>
+      )}
+      {status === 'downloading' && (
+        <div className="update-downloading">
+          <p className="update-status">Downloading... {progress}%</p>
+          <div className="update-progress-bar">
+            <div className="update-progress-fill" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      )}
+      {status === 'downloaded' && (
+        <div className="update-available">
+          <p className="update-status update-ok">✓ Ready to install v{updateInfo?.version}</p>
+          <button className="update-btn update-btn-accent" onClick={handleInstall}>
+            Restart & Install
+          </button>
+        </div>
+      )}
+      {status === 'error' && (
+        <p className="update-status update-err">Failed to check for updates</p>
+      )}
+    </div>
+  )
+}
+
 function SettingsModal({ onClose }) {
   const [tab, setTab] = useState('graphic')
   const [showHelp, setShowHelp] = useState(false)
   const [currentTheme, setCurrentTheme] = useState(() => localStorage.getItem('momo-theme') || 'mint')
+  const appVersion = '1.0.0'
 
   const [settings, setSettings] = useState(() => ({
     'momo-banner-top': localStorage.getItem('momo-banner-top') || null,
@@ -365,7 +459,7 @@ function SettingsModal({ onClose }) {
             {tab === 'about' && (
               <div className="settings-section about-section">
                 <div className="about-logo">MomoTodo</div>
-                <div className="about-version">v1.0.0</div>
+                <div className="about-version">v{appVersion}</div>
                 <div className="about-divider" />
                 <div className="about-row">
                   <span className="about-label">Made by</span>
@@ -382,6 +476,8 @@ function SettingsModal({ onClose }) {
                 <p className="about-desc">
                   A personal todo app that keeps your tasks organized — daily, weekly, or one-time. Your data never leaves your computer.
                 </p>
+                <div className="about-divider" />
+                <UpdateSection />
               </div>
             )}
           </div>
