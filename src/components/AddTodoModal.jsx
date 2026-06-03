@@ -14,6 +14,7 @@ function AddTodoModal({ onClose, onAdd, initialData }) {
   const [selectedDays, setSelectedDays] = useState(initialData?.selectedDays || [])
   const [labelText, setLabelText] = useState(initialData?.label?.text || '')
   const [labelColor, setLabelColor] = useState(initialData?.label?.color || '#DC9B9B')
+  const [memo, setMemo] = useState(initialData?.memo || '')
 
   const toggleDay = (day) => {
     setSelectedDays(prev =>
@@ -34,6 +35,7 @@ function AddTodoModal({ onClose, onAdd, initialData }) {
       endDate: type === 'date' ? endDate : null,
       selectedDays: type === 'weekly' ? selectedDays : [],
       label: labelText ? { text: labelText, color: labelColor } : null,
+      memo: memo || null,
       completed: initialData?.completed || false,
       createdAt: initialData?.createdAt || new Date().toISOString(),
     }
@@ -149,6 +151,18 @@ function AddTodoModal({ onClose, onAdd, initialData }) {
               />
             </div>
           </div>
+          {/* Memo */}
+          <div className="form-group">
+          <label className="form-label">Memo (optional)</label>
+          <textarea
+            className="form-input form-textarea"
+            placeholder="Add a note..."
+            value={memo}
+            onChange={e => setMemo(e.target.value)}
+            rows={3}
+          />
+          </div>
+
         </div>
 
         <div className="modal-footer">

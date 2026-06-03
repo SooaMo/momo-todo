@@ -57,7 +57,7 @@ function ArchiveModal({ onClose, onRestore }) {
         </div>
         <div className="modal-body">
           {archive.length === 0 ? (
-            <p className="empty-text">보관함이 비어있어요.</p>
+            <p className="empty-text" style={{ textAlign: 'center', marginTop: '2rem', marginBottom: '2rem' }}>Archive is empty.</p>
           ) : (
             <ul className="todo-items">
               {archive.map(todo => (
