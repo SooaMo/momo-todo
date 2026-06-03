@@ -37,4 +37,4 @@ Your data stays local — no accounts, no subscriptions, no cost.
 
 ---
 
-Made with ♡ by Momo
+Made with claude by Momo
