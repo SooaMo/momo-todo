@@ -3,6 +3,11 @@ import HelpModal from './HelpModal'
 
 const POSITION_OPTIONS = ['left', 'center', 'right']
 const RESIZE_OPTIONS = ['fill', 'fit', 'tile']
+const FONT_OPTIONS = [
+  { id: 'Pretendard', label: 'Pretendard' },
+  { id: 'Playfair Display', label: 'Playfair' },
+  { id: 'Caveat', label: 'Caveat' },
+]
 const TEXT_COLORS = [
   { label: 'White', value: '#ffffff' },
   { label: 'Black', value: '#000000' },
@@ -29,15 +34,16 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
   const colorInputRef = useRef(null)
 
   const visible = settings[`${imageKey}-visible`] !== false
-  const position = settings[`${imageKey}-position`] || 'center'
-  const resize = settings[`${imageKey}-resize`] || 'fill'
+  const position = settings[`${imageKey}-position`] || 'right'
+  const resize = settings[`${imageKey}-resize`] || 'fit'
   const image = settings[imageKey] || null
   const text = settings[`${imageKey}-text`] !== undefined
     ? settings[`${imageKey}-text`]
     : "let's get things done ✦"
   const textPosition = settings[`${imageKey}-text-position`] || 'left'
-  const textColor = settings[`${imageKey}-text-color`] || '#ffffff'
-  const bgColor = settings[`${imageKey}-bg-color`] || 'none'
+  const textColor = settings[`${imageKey}-text-color`] || '#000000'
+  const textFont = settings[`${imageKey}-text-font`] || 'Pretendard'
+  const bgColor = settings[`${imageKey}-bg-color`] || '#ffffff'
   const bgColorCustom = settings[`${imageKey}-bg-color-custom`] || '#ffffff'
 
   const resolvedBgColor = bgColor === 'custom'
@@ -187,6 +193,23 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
             />
           </div>
 
+          {/* Text font */}
+          <div className="settings-position">
+            <span className="settings-position-label">Font</span>
+            <div className="settings-position-btns">
+              {FONT_OPTIONS.map(f => (
+                <button
+                  key={f.id}
+                  className={`settings-pos-btn ${textFont === f.id ? 'active' : ''}`}
+                  style={{ fontFamily: f.id }}
+                  onClick={() => onSettingsChange({ [`${imageKey}-text-font`]: f.id })}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Text align */}
           <div className="settings-position">
             <span className="settings-position-label">Text align</span>
@@ -237,16 +260,17 @@ function SettingsModal({ onClose }) {
   const [currentTheme, setCurrentTheme] = useState(() => localStorage.getItem('momo-theme') || 'mint')
 
   const [settings, setSettings] = useState(() => ({
-  'momo-banner-top': localStorage.getItem('momo-banner-top') || null,
-  'momo-banner-top-visible': localStorage.getItem('momo-banner-top-visible') !== 'false',
-  'momo-banner-top-position': localStorage.getItem('momo-banner-top-position') || 'right',
-  'momo-banner-top-resize': localStorage.getItem('momo-banner-top-resize') || 'fit',
-  'momo-banner-top-text': localStorage.getItem('momo-banner-top-text') ?? "let's get things done ✦",
-  'momo-banner-top-text-position': localStorage.getItem('momo-banner-top-text-position') || 'left',
-  'momo-banner-top-text-color': localStorage.getItem('momo-banner-top-text-color') || '#000000',
-  'momo-banner-top-bg-color': localStorage.getItem('momo-banner-top-bg-color') || '#ffffff',
-  'momo-banner-top-bg-color-custom': localStorage.getItem('momo-banner-top-bg-color-custom') || '#ffffff',
-}))
+    'momo-banner-top': localStorage.getItem('momo-banner-top') || null,
+    'momo-banner-top-visible': localStorage.getItem('momo-banner-top-visible') !== 'false',
+    'momo-banner-top-position': localStorage.getItem('momo-banner-top-position') || 'right',
+    'momo-banner-top-resize': localStorage.getItem('momo-banner-top-resize') || 'fit',
+    'momo-banner-top-text': localStorage.getItem('momo-banner-top-text') ?? "let's get things done ✦",
+    'momo-banner-top-text-position': localStorage.getItem('momo-banner-top-text-position') || 'left',
+    'momo-banner-top-text-color': localStorage.getItem('momo-banner-top-text-color') || '#000000',
+    'momo-banner-top-text-font': localStorage.getItem('momo-banner-top-text-font') || 'Pretendard',
+    'momo-banner-top-bg-color': localStorage.getItem('momo-banner-top-bg-color') || '#ffffff',
+    'momo-banner-top-bg-color-custom': localStorage.getItem('momo-banner-top-bg-color-custom') || '#ffffff',
+  }))
 
   const handleSettingsChange = (updates) => {
     setSettings(prev => ({ ...prev, ...updates }))

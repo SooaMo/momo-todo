@@ -13,6 +13,7 @@ function BannerImage({ imageKey, className }) {
   const text = localStorage.getItem(`${imageKey}-text`) ?? "let's get things done ✦"
   const textPosition = localStorage.getItem(`${imageKey}-text-position`) || 'left'
   const textColor = localStorage.getItem(`${imageKey}-text-color`) || '#000000'
+  const textFont = localStorage.getItem(`${imageKey}-text-font`) || 'Pretendard'
   const bgColor = localStorage.getItem(`${imageKey}-bg-color`) || '#ffffff'
   const bgColorCustom = localStorage.getItem(`${imageKey}-bg-color-custom`) || '#ffffff'
 
@@ -71,7 +72,7 @@ function BannerImage({ imageKey, className }) {
       onMouseLeave={() => setHovered(false)}
     >
       {text && (
-        <div className="banner-text" style={getTextStyle()}>
+        <div className="banner-text" style={{ ...getTextStyle(), fontFamily: textFont }}>
           {text}
         </div>
       )}

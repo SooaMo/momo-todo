@@ -1,4 +1,5 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Caveat:wght@400;600&display=swap');
 
 :root {
   --color-primary: #94bba9;
@@ -1268,9 +1269,8 @@ body {
 
 /* banner */
 .banner-text {
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  font-size: 1.2rem;
+  font-weight: 400;
   pointer-events: none;
   white-space: nowrap;
   overflow: hidden;
