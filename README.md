@@ -1,16 +1,40 @@
-# React + Vite
+# MomoTodo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A personal desktop todo app built with Electron + React.  
+Your data stays local — no accounts, no subscriptions, no cost.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Download
 
-## React Compiler
+👉 [Latest Release](https://github.com/SooaMo/momo-todo/releases/latest)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Features
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Todo types** — Daily, Weekly, Date range, One-time
+- **Priority** — High, Mid, Low with auto-sorting
+- **Labels** — Custom text & color tags
+- **Memo** — Add notes to any todo
+- **Calendar** — Month & Week views with completion history
+- **Stickers** — Drag & drop image stickers on any page
+- **Archive** — Soft delete with restore
+- **Themes** — Mint, Ocean, Lavender, Dark
+- **Banner** — Customize the top banner with image & text
+- **Always on Top** — Keep the app floating above other windows
+- **Local only** — All data saved on your computer
+
+---
+
+## Built With
+
+- [Electron](https://www.electronjs.org/)
+- [React](https://react.dev/)
+- [Vite](https://vitejs.dev/)
+- [electron-store](https://github.com/sindresorhus/electron-store)
+- [@dnd-kit](https://dndkit.com/)
+
+---
+
+Made with ♡ by Momo
