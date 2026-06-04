@@ -1115,23 +1115,6 @@ body {
   border-radius: 0.25rem;
 }
 
-.sticker-delete-btn {
-  position: absolute;
-  top: -0.5rem;
-  right: -0.5rem;
-  width: 1.2rem;
-  height: 1.2rem;
-  border-radius: 50%;
-  background-color: var(--color-accent);
-  border: none;
-  cursor: pointer;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 13;
-}
-
 .sticker-side-panel {
   width: 13rem;
   background-color: var(--color-white);
@@ -1243,21 +1226,65 @@ body {
 
 .sticker-upload-btn:hover { background-color: var(--color-secondary); }
 
+.sticker-delete-btn {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  background-color: #e05555;
+  border: 2px solid white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  z-index: 14;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.sticker-delete-btn:hover { background-color: #c03333; }
+
+.sticker-rotate-handle {
+  position: absolute;
+  bottom: -0.5rem;
+  left: -0.5rem;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  background-color: #5588e0;
+  border: 2px solid white;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  z-index: 14;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.sticker-rotate-handle:hover { background-color: #3366cc; }
+
 .sticker-resize-handle {
   position: absolute;
-  bottom: -0.4rem;
-  right: -0.4rem;
-  width: 1.1rem;
-  height: 1.1rem;
+  bottom: -0.5rem;
+  right: -0.5rem;
+  width: 1.3rem;
+  height: 1.3rem;
   border-radius: 50%;
-  background-color: var(--color-primary);
+  background-color: #55aa77;
+  border: 2px solid white;
   cursor: nwse-resize;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  z-index: 13;
+  z-index: 14;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
+
+.sticker-resize-handle:hover { background-color: #338855; }
 
 .sticker-clear-btn {
   display: flex;
@@ -1842,3 +1869,28 @@ body {
 
 .todo-dropdown-item:hover { background-color: var(--color-secondary); }
 .todo-dropdown-item.active { color: var(--color-primary); font-weight: 600; }
+
+.cal-fab-btn {
+  position: sticky;
+  bottom: 1rem;
+  left: calc(100% - 3rem);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: transform 0.15s, box-shadow 0.15s;
+  z-index: 50;
+  margin-top: 0.5rem;
+}
+
+.cal-fab-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}

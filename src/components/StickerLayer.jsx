@@ -11,6 +11,8 @@ function StickerLayer({ pageKey, stickerMode }) {
   })
   const [selectedId, setSelectedId] = useState(null)
   const [resizing, setResizing] = useState(null)
+  const [rotating, setRotating] = useState(null)
+  const [loaded, setLoaded] = useState(false)
   const layerRef = useRef(null)
   const pageKeyRef = useRef(pageKey)
   const isLoadingRef = useRef(false)
@@ -46,6 +48,7 @@ function StickerLayer({ pageKey, stickerMode }) {
     return () => window.removeEventListener('stickers-cleared', handleCleared)
   }, [pageKey])
 
+  // Resize
   useEffect(() => {
     if (!resizing) return
     const handleMouseMove = (e) => {
@@ -64,6 +67,27 @@ function StickerLayer({ pageKey, stickerMode }) {
       window.removeEventListener('mouseup', handleMouseUp)
     }
   }, [resizing])
+
+  // Rotate
+  useEffect(() => {
+    if (!rotating) return
+    const handleMouseMove = (e) => {
+      const { id, centerX, centerY, startAngle, startRotation } = rotating
+      const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI)
+      const delta = angle - startAngle
+      const newRotation = (startRotation + delta + 360) % 360
+      setStickers(prev => prev.map(s =>
+        s.id === id ? { ...s, rotation: Math.round(newRotation) } : s
+      ))
+    }
+    const handleMouseUp = () => setRotating(null)
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [rotating])
 
   const handleDragOver = (e) => e.preventDefault()
 
@@ -93,6 +117,7 @@ function StickerLayer({ pageKey, stickerMode }) {
         id: Date.now(),
         src,
         size: DEFAULT_SIZE,
+        rotation: 0,
         x: Math.max(0, x),
         y: Math.max(0, y),
       }])
@@ -119,6 +144,23 @@ function StickerLayer({ pageKey, stickerMode }) {
     })
   }
 
+  const handleRotateStart = (e, sticker) => {
+    e.stopPropagation()
+    e.preventDefault()
+    const rect = layerRef.current.getBoundingClientRect()
+    const px = sticker.size || DEFAULT_SIZE
+    const centerX = rect.left + sticker.x + px / 2
+    const centerY = rect.top + sticker.y + px / 2
+    const startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI)
+    setRotating({
+      id: sticker.id,
+      centerX,
+      centerY,
+      startAngle,
+      startRotation: sticker.rotation || 0,
+    })
+  }
+
   const handleLayerClick = (e) => {
     if (e.target === layerRef.current) setSelectedId(null)
   }
@@ -132,6 +174,7 @@ function StickerLayer({ pageKey, stickerMode }) {
       {stickers.map(sticker => {
         const px = sticker.size || DEFAULT_SIZE
         const isSelected = selectedId === sticker.id
+        const rotation = sticker.rotation || 0
         return (
           <div
             key={sticker.id}
@@ -141,10 +184,11 @@ function StickerLayer({ pageKey, stickerMode }) {
               top: sticker.y,
               width: px,
               height: px,
+              transform: `rotate(${rotation}deg)`,
               pointerEvents: stickerMode ? 'all' : 'none',
               cursor: stickerMode ? 'grab' : 'default',
             }}
-            draggable={stickerMode && !resizing}
+            draggable={stickerMode && !resizing && !rotating}
             onDragStart={e => handleStickerDragStart(e, sticker.id)}
             onClick={e => {
               e.stopPropagation()
@@ -159,21 +203,40 @@ function StickerLayer({ pageKey, stickerMode }) {
             />
             {isSelected && stickerMode && (
               <>
+                {/* Delete button - top left */}
                 <button
                   className="sticker-delete-btn"
                   onClick={e => { e.stopPropagation(); handleDelete(sticker.id) }}
+                  title="Delete"
                 >
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
                 </button>
+
+                {/* Rotate handle - top right */}
+                <div
+                  className="sticker-rotate-handle"
+                  onMouseDown={e => handleRotateStart(e, sticker)}
+                  title="Rotate"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 2v6h-6"/>
+                    <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+                  </svg>
+                </div>
+
+                {/* Resize handle - bottom right */}
                 <div
                   className="sticker-resize-handle"
                   onMouseDown={e => handleResizeStart(e, sticker)}
+                  title="Resize"
                 >
-                  <svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor">
-                    <path d="M9 1L1 9M5 9L9 9L9 5"/>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(90deg)' }}>
+                    <line x1="5" y1="19" x2="19" y2="5"/>
+                    <polyline points="5 11 5 19 13 19"/>
+                    <polyline points="11 5 19 5 19 13"/>
                   </svg>
                 </div>
               </>

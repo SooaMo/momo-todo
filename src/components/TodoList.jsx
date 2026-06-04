@@ -591,8 +591,10 @@ function TodoList({ todos, setTodos, folders, setFolders, lang, onOpenSettings }
           folders={folders}
           defaultFolderId="default"
           allTodos={todos}
+          defaultType={activeTab === 'all' ? 'daily' : activeTab}
         />
       )}
+      
       {editTodo && (
         <AddTodoModal
           onClose={() => setEditTodo(null)}

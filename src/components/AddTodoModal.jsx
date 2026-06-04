@@ -3,11 +3,11 @@ import { getT } from '../i18n'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-function AddTodoModal({ onClose, onAdd, initialData, lang, folders, defaultFolderId, allTodos }) {
+function AddTodoModal({ onClose, onAdd, initialData, lang, folders, defaultFolderId, allTodos, defaultType }) {
   const t = getT(lang)
   const isEdit = !!initialData
   const [title, setTitle] = useState(initialData?.title || '')
-  const [type, setType] = useState(initialData?.type || 'daily')
+  const [type, setType] = useState(initialData?.type || defaultType || 'daily')
   const [priority, setPriority] = useState(initialData?.priority || 'mid')
   const [time, setTime] = useState(initialData?.time || '')
   const [dueDate, setDueDate] = useState(initialData?.dueDate || '')

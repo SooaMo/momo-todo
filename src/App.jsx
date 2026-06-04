@@ -229,6 +229,7 @@ function App() {
               calView={calView}
               setCalView={setCalView}
               lang={lang}
+              folders={folders}
             />
           )}
         </main>

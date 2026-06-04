@@ -43,12 +43,13 @@ function getTodoColor(todo) {
   return todo.label?.color || '#94bba9'
 }
 
-function CalendarView({ todos, setTodos, calView, setCalView, lang }) {
+function CalendarView({ todos, setTodos, calView, setCalView, lang, folders }) {
   const t = getT(lang)
   const today = new Date()
   const [currentDate, setCurrentDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1))
   const [selectedDate, setSelectedDate] = useState(today)
   const [editTodo, setEditTodo] = useState(null)
+  const [showAddModal, setShowAddModal] = useState(false)
   const [activeTypes, setActiveTypes] = useState(TODO_TYPES)
   const [showFilter, setShowFilter] = useState(false)
   const [showDatePicker, setShowDatePicker] = useState(false)
@@ -537,6 +538,29 @@ useEffect(() => {
       {editTodo && (
         <AddTodoModal onClose={() => setEditTodo(null)} onAdd={handleEdit} initialData={editTodo} lang={lang} />
       )}
+
+      {/* Floating + button */}
+<button
+  className="cal-fab-btn"
+  onClick={() => setShowAddModal(true)}
+>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"/>
+    <line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+</button>
+
+{showAddModal && (
+  <AddTodoModal
+    onClose={() => setShowAddModal(false)}
+    onAdd={(todo) => setTodos(prev => [...prev, todo])}
+    lang={lang}
+    folders={folders}
+    defaultFolderId="default"
+    allTodos={todos}
+  />
+)}
+
     </div>
   )
 }
