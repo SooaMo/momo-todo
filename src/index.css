@@ -925,18 +925,59 @@ body {
 .settings-banner-label { font-size: 0.85rem; font-weight: 600; color: var(--color-text); }
 
 .settings-toggle {
-  padding: 0.2rem 0.6rem;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 3.2rem;
+  height: 1.5rem;
   border-radius: 1rem;
   border: none;
-  font-family: 'Pretendard', sans-serif;
-  font-size: 0.75rem;
-  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
 }
 
-.settings-toggle.on { background-color: var(--color-primary); color: white; }
-.settings-toggle.off { background-color: var(--color-secondary); color: var(--color-text-light); }
+.settings-toggle.on {
+  background-color: var(--color-primary);
+}
+
+.settings-toggle.off {
+  background-color: #ccc;
+  color: #999;
+}
+
+.settings-toggle::after {
+  content: '';
+  position: absolute;
+  top: 0.25rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.settings-toggle.on::after {
+  left: auto;
+  right: 0.25rem;
+}
+
+.settings-toggle.off::after {
+  left: 0.25rem;
+}
+
+.settings-toggle.on .toggle-label {
+  margin-left: 0.35rem;
+}
+
+.settings-toggle.off .toggle-label {
+  margin-left: 1.4rem;
+}
 
 .settings-banner-controls { display: flex; flex-direction: column; gap: 0.5rem; }
 

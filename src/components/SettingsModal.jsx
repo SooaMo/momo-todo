@@ -352,6 +352,31 @@ function DataSection({ lang }) {
   )
 }
 
+function StartupSection({ lang }) {
+  const [openAtLogin, setOpenAtLogin] = useState(false)
+
+  useEffect(() => {
+    window.electronAPI?.getLoginItemStatus?.().then(status => {
+      setOpenAtLogin(status)
+    })
+  }, [])
+
+  const handleToggle = () => {
+    const next = !openAtLogin
+    setOpenAtLogin(next)
+    window.electronAPI?.setLoginItem(next)
+  }
+
+  return (
+  <button
+    className={`settings-toggle ${openAtLogin ? 'on' : 'off'}`}
+    onClick={handleToggle}
+  >
+    <span className="toggle-label">{openAtLogin ? 'ON' : 'OFF'}</span>
+  </button>
+)
+}
+
 function UpdateSection({ lang }) {
   const t = getT(lang)
   const [status, setStatus] = useState('idle')
@@ -495,26 +520,37 @@ useEffect(() => {
           <div className="modal-body">
            {tab === 'graphic' && (
             <div className="settings-section">
-              {/* Language */}
-              <div className="settings-banner-section">
-                <div className="settings-banner-header">
-                  <span className="settings-banner-label">{t.language}</span>
+              
+            <div className="settings-banner-section">
+              <div className="settings-banner-header">
+                <span className="settings-banner-label">{t.language}</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <div>
+                  <div className="settings-position-btns">
+                    {[
+                      { id: 'en', label: 'English' },
+                      { id: 'kr', label: '한국어' },
+                    ].map(l => (
+                      <button
+                        key={l.id}
+                        className={`settings-pos-btn ${selectedLang === l.id ? 'active' : ''}`}
+                        onClick={() => setSelectedLang(l.id)}
+                      >
+                        {l.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="settings-position-btns" style={{ marginTop: '0.5rem' }}>
-                  {[
-                    { id: 'en', label: 'English' },
-                    { id: 'kr', label: '한국어' },
-                  ].map(l => (
-                    <button
-                      key={l.id}
-                      className={`settings-pos-btn ${selectedLang === l.id ? 'active' : ''}`}
-                      onClick={() => setSelectedLang(l.id)}
-                    >
-                      {l.label}
-                    </button>
-                  ))}
+
+                <div style={{ width: '1px', backgroundColor: 'var(--color-secondary)', alignSelf: 'stretch' }} />
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span className="settings-banner-label">{lang === 'kr' ? '시작 시 자동 실행' : 'Launch on startup'}</span>
+                  <StartupSection lang={lang} />
                 </div>
               </div>
+            </div>
 
               <div className="help-divider" />
 
@@ -609,6 +645,7 @@ useEffect(() => {
                 </p>
                 <div className="about-divider" />
                 <UpdateSection lang={lang} />
+                
               </div>
             )}
           </div>

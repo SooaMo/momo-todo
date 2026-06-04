@@ -228,3 +228,6 @@ ipcMain.handle('show-notification', (event, { title, body }) => {
 
 ipcMain.handle('get-app-version', () => app.getVersion())
 
+ipcMain.handle('get-login-item-status', () => {
+  return app.getLoginItemSettings().openAtLogin
+})
