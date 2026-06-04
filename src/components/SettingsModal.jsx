@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import HelpModal from './HelpModal'
+import { getT } from '../i18n'
 
-const POSITION_OPTIONS = ['left', 'center', 'right']
 const RESIZE_OPTIONS = ['fill', 'fit', 'tile']
 const FONT_OPTIONS = [
   { id: 'Pretendard', label: 'Pretendard' },
@@ -29,7 +29,14 @@ const THEMES = [
   { id: 'dark', label: 'Dark', color: '#2a3442' },
 ]
 
-function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
+function BannerSetting({ imageKey, label, settings, onSettingsChange, lang }) {
+  const t = getT(lang)
+
+  const POSITION_OPTIONS = [
+    { id: 'left', label: t.posLeft },
+    { id: 'center', label: t.posCenter },
+    { id: 'right', label: t.posRight },
+  ]
   const inputRef = useRef(null)
   const colorInputRef = useRef(null)
 
@@ -91,7 +98,7 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
                 <polyline points="17 8 12 3 7 8"/>
                 <line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
-              Upload
+              {t.uploadBtn}
             </button>
             {image && (
               <button className="settings-sm-btn danger" onClick={handleRemove}>
@@ -99,22 +106,22 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                   <path d="M3 3v5h5"/>
                 </svg>
-                Reset
+                {t.reset}
               </button>
             )}
           </div>
 
           {/* Position */}
           <div className="settings-position">
-            <span className="settings-position-label">Position</span>
+            <span className="settings-position-label">{t.position}</span>
             <div className="settings-position-btns">
               {POSITION_OPTIONS.map(p => (
                 <button
-                  key={p}
-                  className={`settings-pos-btn ${position === p ? 'active' : ''}`}
-                  onClick={() => onSettingsChange({ [`${imageKey}-position`]: p })}
+                  key={p.id}
+                  className={`settings-pos-btn ${position === p.id ? 'active' : ''}`}
+                  onClick={() => onSettingsChange({ [`${imageKey}-position`]: p.id })}
                 >
-                  {p}
+                  {p.label}
                 </button>
               ))}
             </div>
@@ -122,7 +129,7 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
 
           {/* Resize */}
           <div className="settings-position">
-            <span className="settings-position-label">Resize</span>
+            <span className="settings-position-label">{t.resize}</span>
             <div className="settings-position-btns">
               {RESIZE_OPTIONS.map(r => (
                 <button
@@ -138,7 +145,7 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
 
           {/* Background color */}
           <div className="settings-position">
-            <span className="settings-position-label">Background</span>
+            <span className="settings-position-label">{t.background}</span>
             <div className="settings-text-colors">
               {BG_COLORS.map(c => (
                 <button
@@ -180,13 +187,15 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
 
           <div className="help-divider" />
 
+          
+
           {/* Text */}
           <div className="form-group">
-            <label className="settings-position-label">Text (optional)</label>
+            <label className="settings-position-label">{t.textOptional}</label>
             <input
               className="form-input"
               type="text"
-              placeholder="let's get things done ✦"
+              placeholder={t.textPlaceholder}
               value={text}
               onChange={e => onSettingsChange({ [`${imageKey}-text`]: e.target.value })}
             />
@@ -194,7 +203,7 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
 
           {/* Text font */}
           <div className="settings-position">
-            <span className="settings-position-label">Font</span>
+            <span className="settings-position-label">{t.font}</span>
             <div className="settings-position-btns">
               {FONT_OPTIONS.map(f => (
                 <button
@@ -211,15 +220,15 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
 
           {/* Text align */}
           <div className="settings-position">
-            <span className="settings-position-label">Text align</span>
+            <span className="settings-position-label">{t.textAlign}</span>
             <div className="settings-position-btns">
               {POSITION_OPTIONS.map(p => (
                 <button
-                  key={p}
-                  className={`settings-pos-btn ${textPosition === p ? 'active' : ''}`}
-                  onClick={() => onSettingsChange({ [`${imageKey}-text-position`]: p })}
+                  key={p.id}
+                  className={`settings-pos-btn ${textPosition === p.id ? 'active' : ''}`}
+                  onClick={() => onSettingsChange({ [`${imageKey}-text-position`]: p.id })}
                 >
-                  {p}
+                  {p.label}
                 </button>
               ))}
             </div>
@@ -227,7 +236,7 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
 
           {/* Text color */}
           <div className="settings-position">
-            <span className="settings-position-label">Text color</span>
+            <span className="settings-position-label">{t.textColor}</span>
             <div className="settings-text-colors">
               {TEXT_COLORS.map(c => (
                 <button
@@ -253,7 +262,8 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange }) {
   )
 }
 
-function UpdateSection() {
+function UpdateSection({ lang }) {
+  const t = getT(lang)
   const [status, setStatus] = useState('idle')
   const [updateInfo, setUpdateInfo] = useState(null)
 
@@ -295,37 +305,39 @@ function UpdateSection() {
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
             <path d="M3 3v5h5"/>
           </svg>
-          Check for Updates
+          {t.checkUpdates}
         </button>
       )}
       {status === 'checking' && (
-        <p className="update-status">Checking for updates...</p>
+        <p className="update-status">{t.checking}</p>
       )}
       {status === 'latest' && (
-        <p className="update-status update-ok">✓ You're up to date!</p>
+        <p className="update-status update-ok">{t.upToDate}</p>
       )}
       {status === 'available' && (
         <div className="update-available">
-          <p className="update-status update-new">🎉 v{updateInfo?.version} is available!</p>
+          <p className="update-status update-new">{t.updateAvailable(updateInfo?.version)}</p>
           <button className="update-btn update-btn-accent" onClick={handleGoToRelease}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
               <polyline points="15 3 21 3 21 9"/>
               <line x1="10" y1="14" x2="21" y2="3"/>
             </svg>
-            Download on GitHub
+            {t.downloadGithub}
           </button>
         </div>
       )}
       {status === 'error' && (
-        <p className="update-status update-err">Failed to check for updates</p>
+        <p className="update-status update-err">{t.updateFailed}</p>
       )}
     </div>
   )
 }
 
-function SettingsModal({ onClose }) {
+function SettingsModal({ onClose, lang, setLang }) {
+  const t = getT(lang)
   const [tab, setTab] = useState('graphic')
+  const [selectedLang, setSelectedLang] = useState(lang)
   const [showHelp, setShowHelp] = useState(false)
   const [currentTheme, setCurrentTheme] = useState(() => localStorage.getItem('momo-theme') || 'mint')
   const [appVersion, setAppVersion] = useState('...')
@@ -352,14 +364,15 @@ useEffect(() => {
   }
 
   const handleSave = () => {
-    Object.entries(settings).forEach(([key, value]) => {
-      if (value === null) localStorage.removeItem(key)
-      else localStorage.setItem(key, String(value))
-    })
-    localStorage.setItem('momo-theme', currentTheme)
-    onClose()
-    window.location.reload()
-  }
+  Object.entries(settings).forEach(([key, value]) => {
+    if (value === null) localStorage.removeItem(key)
+    else localStorage.setItem(key, String(value))
+  })
+  localStorage.setItem('momo-theme', currentTheme)
+  setLang(selectedLang)
+  onClose()
+  window.location.reload()
+}
 
   return (
     <>
@@ -376,26 +389,50 @@ useEffect(() => {
           </div>
 
           <div className="settings-tabs">
-            {['graphic', 'help', 'about'].map(t => (
-              <button
-                key={t}
-                className={`settings-tab ${tab === t ? 'active' : ''}`}
-                onClick={() => setTab(t)}
-              >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
+            {[
+              { id: 'graphic', label: t.graphic },
+              { id: 'help', label: t.help },
+              { id: 'about', label: t.about },
+            ].map(item => (
+              <button key={item.id} className={`settings-tab ${tab === item.id ? 'active' : ''}`} onClick={() => setTab(item.id)}>
+                {item.label}
               </button>
             ))}
           </div>
 
           <div className="modal-body">
-            {tab === 'graphic' && (
-              <div className="settings-section">
-                <div className="settings-banner-section">
-                  <div className="settings-banner-header">
-                    <span className="settings-banner-label">Theme</span>
-                  </div>
-                  <div className="settings-theme-grid">
-                    {THEMES.map(t => (
+           {tab === 'graphic' && (
+  <div className="settings-section">
+    {/* Language */}
+    <div className="settings-banner-section">
+      <div className="settings-banner-header">
+        <span className="settings-banner-label">{t.language}</span>
+      </div>
+      <div className="settings-position-btns" style={{ marginTop: '0.5rem' }}>
+        {[
+          { id: 'en', label: 'English' },
+          { id: 'kr', label: '한국어' },
+        ].map(l => (
+          <button
+            key={l.id}
+            className={`settings-pos-btn ${selectedLang === l.id ? 'active' : ''}`}
+            onClick={() => setSelectedLang(l.id)}
+          >
+            {l.label}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <div className="help-divider" />
+
+    {/* Theme */}
+    <div className="settings-banner-section">
+      <div className="settings-banner-header">
+        <span className="settings-banner-label">{t.theme}</span>
+      </div>
+      <div className="settings-theme-grid">
+        {THEMES.map(t => (
                       <button
                         key={t.id}
                         className={`settings-theme-btn ${currentTheme === t.id ? 'active' : ''}`}
@@ -412,14 +449,16 @@ useEffect(() => {
                     ))}
                   </div>
                 </div>
+                
 
-                <div className="help-divider" />
+<div className="help-divider" />
 
                 <BannerSetting
                   imageKey="momo-banner-top"
-                  label="Banner (Today)"
+                  label={t.bannerToday}
                   settings={settings}
                   onSettingsChange={handleSettingsChange}
+                  lang={lang}
                 />
               </div>
             )}
@@ -432,7 +471,7 @@ useEffect(() => {
                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
                     <line x1="12" y1="17" x2="12.01" y2="17"/>
                   </svg>
-                  View How to use MomoTodo
+                  {t.viewHelp}
                 </button>
 
                 <button
@@ -443,7 +482,7 @@ useEffect(() => {
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                     <polyline points="22,6 12,13 2,6"/>
                   </svg>
-                  Report a Bug / Send Feedback
+                  {t.reportBug}
                 </button>
               </div>
             )}
@@ -454,22 +493,22 @@ useEffect(() => {
                 <div className="about-version">v{appVersion}</div>
                 <div className="about-divider" />
                 <div className="about-row">
-                  <span className="about-label">Made by</span>
+                  <span className="about-label">{t.madeBy} </span>
                   <span className="about-value">Momo</span>
                 </div>
                 <div className="about-row">
-                  <span className="about-label">Built with</span>
+                  <span className="about-label">{t.builtWith}</span>
                   <span className="about-value">Electron + React</span>
                 </div>
                 <div className="about-row">
-                  <span className="about-label">Storage</span>
-                  <span className="about-value">Local only</span>
+                  <span className="about-label">{t.storage}</span>
+                  <span className="about-value">{t.localOnly}</span>
                 </div>
                 <p className="about-desc">
-                  A personal todo app that keeps your tasks organized — daily, weekly, or one-time. Your data never leaves your computer.
+                 {t.aboutDesc}
                 </p>
                 <div className="about-divider" />
-                <UpdateSection />
+                <UpdateSection lang={lang} />
               </div>
             )}
           </div>
@@ -483,7 +522,7 @@ useEffect(() => {
         </div>
       </div>
 
-      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} lang={lang} />}
     </>
   )
 }

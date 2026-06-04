@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getT } from '../i18n'
 
 const ARCHIVE_KEY = 'momo-archive'
 
@@ -20,7 +21,8 @@ export function saveToArchive(todo) {
   localStorage.setItem(ARCHIVE_KEY, JSON.stringify([archived, ...archive]))
 }
 
-function ArchiveModal({ onClose, onRestore }) {
+function ArchiveModal({ onClose, onRestore, lang }) {
+  const t = getT(lang)
   const [archive, setArchive] = useState(loadArchive)
 
   const handleDelete = (id) => {
@@ -47,7 +49,7 @@ function ArchiveModal({ onClose, onRestore }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">Archive</h2>
+          <h2 className="modal-title">{t.archive}</h2>
           <button className="modal-close" onClick={onClose}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/>
@@ -57,7 +59,9 @@ function ArchiveModal({ onClose, onRestore }) {
         </div>
         <div className="modal-body">
           {archive.length === 0 ? (
-            <p className="empty-text" style={{ textAlign: 'center', marginTop: '2rem', marginBottom: '2rem' }}>Archive is empty.</p>
+            <p className="empty-text" style={{ textAlign: 'center', marginTop: '2rem', marginBottom: '2rem' }}>
+              {t.archiveEmpty}
+            </p>
           ) : (
             <ul className="todo-items">
               {archive.map(todo => (
@@ -66,21 +70,13 @@ function ArchiveModal({ onClose, onRestore }) {
                     <div className="todo-title-row">
                       <span className="todo-title archive-title">{todo.title}</span>
                       <div className="todo-actions">
-                        <button
-                          className="todo-restore"
-                          onClick={() => handleRestore(todo)}
-                          title="Restore"
-                        >
+                        <button className="todo-restore" onClick={() => handleRestore(todo)} title="Restore">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                             <path d="M3 3v5h5"/>
                           </svg>
                         </button>
-                        <button
-                          className="todo-delete"
-                          onClick={() => handleDelete(todo.id)}
-                          title="Delete permanently"
-                        >
+                        <button className="todo-delete" onClick={() => handleDelete(todo.id)} title="Delete permanently">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="3 6 5 6 21 6"/>
                             <path d="M19 6l-1 14H6L5 6"/>
@@ -91,9 +87,13 @@ function ArchiveModal({ onClose, onRestore }) {
                       </div>
                     </div>
                     <div className="todo-meta">
-                      <span className={`priority-badge priority-${todo.priority}`}>{todo.priority}</span>
-                      <span className="type-badge">{todo.type}</span>
-                      <span className="time-badge">🗂 {formatDate(todo.archivedAt)}</span>
+                      <span className={`priority-badge priority-${todo.priority}`}>
+                        {todo.priority === 'high' ? t.priorityHigh : todo.priority === 'mid' ? t.priorityMid : t.priorityLow}
+                      </span>
+                      <span className="type-badge">
+                        {todo.type === 'daily' ? t.tabDaily : todo.type === 'weekly' ? t.tabWeekly : todo.type === 'date' ? t.tabDate : t.tabOneTime}
+                      </span>
+                      <span className="time-badge">{formatDate(todo.archivedAt)}</span>
                     </div>
                   </div>
                 </li>

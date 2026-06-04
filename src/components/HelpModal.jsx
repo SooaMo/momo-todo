@@ -1,9 +1,12 @@
-function HelpModal({ onClose }) {
+import { getT } from '../i18n'
+
+function HelpModal({ onClose, lang }) {
+  const t = getT(lang)
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal help-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">How to use MomoTodo</h2>
+          <h2 className="modal-title">{t.howToUse}</h2>
           <button className="modal-close" onClick={onClose}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/>
@@ -22,26 +25,26 @@ function HelpModal({ onClose }) {
                 </svg>
               </span>
               <div>
-                <p className="help-section-title">Todo Types</p>
-                <p className="help-section-desc">Set how often a todo repeats</p>
+                <p className="help-section-title">{t.helpTodoTypes}</p>
+                <p className="help-section-desc">{t.helpTodoTypesDesc}</p>
               </div>
             </div>
             <div className="help-chips">
               <div className="help-chip">
-                <span className="help-chip-label">Daily</span>
-                <span className="help-chip-desc">Repeats every day</span>
+                <span className="help-chip-label">{t.tabDaily}</span>
+                <span className="help-chip-desc">{t.helpTodoTypesDaily}</span>
               </div>
               <div className="help-chip">
-                <span className="help-chip-label">Weekly</span>
-                <span className="help-chip-desc">Repeats on specific days of the week</span>
+                <span className="help-chip-label">{t.tabWeekly}</span>
+                <span className="help-chip-desc">{t.helpTodoTypesWeekly}</span>
               </div>
               <div className="help-chip">
-                <span className="help-chip-label">Date</span>
-                <span className="help-chip-desc">Active during a start ~ end date range</span>
+                <span className="help-chip-label">{t.tabDate}</span>
+                <span className="help-chip-desc">{t.helpTodoTypesDate}</span>
               </div>
               <div className="help-chip">
-                <span className="help-chip-label">One-time</span>
-                <span className="help-chip-desc">One-off task, optional due date. Shows until completed</span>
+                <span className="help-chip-label">{t.tabOneTime}</span>
+                <span className="help-chip-desc">{t.helpTodoTypesOneTime}</span>
               </div>
             </div>
           </div>
@@ -57,8 +60,8 @@ function HelpModal({ onClose }) {
                 </svg>
               </span>
               <div>
-                <p className="help-section-title">Check & Complete</p>
-                <p className="help-section-desc">Click the checkbox to mark done for today. Daily & Weekly todos reset automatically the next day. Completed todos move to the bottom automatically</p>
+                <p className="help-section-title">{t.helpCheckTitle}</p>
+                <p className="help-section-desc">{t.helpCheckDesc}</p>
               </div>
             </div>
           </div>
@@ -76,8 +79,8 @@ function HelpModal({ onClose }) {
                 </svg>
               </span>
               <div>
-                <p className="help-section-title">Priority & Filter</p>
-                <p className="help-section-desc">Todos are sorted by High → Mid → Low priority. Use the type tabs (daily, weekly...) and Priority dropdown to filter your list. Drag the ⠿ handle on the left to reorder manually</p>
+                <p className="help-section-title">{t.helpPriorityTitle}</p>
+                <p className="help-section-desc">{t.helpPriorityDesc}</p>
               </div>
             </div>
           </div>
@@ -94,8 +97,8 @@ function HelpModal({ onClose }) {
                 </svg>
               </span>
               <div>
-                <p className="help-section-title">Memo</p>
-                <p className="help-section-desc">Add a note to any todo when creating or editing. Click the todo title to expand and see the memo</p>
+                <p className="help-section-title">{t.helpMemoTitle}</p>
+                <p className="help-section-desc">{t.helpMemoDesc}</p>
               </div>
             </div>
           </div>
@@ -111,8 +114,8 @@ function HelpModal({ onClose }) {
                 </svg>
               </span>
               <div>
-                <p className="help-section-title">Calendar</p>
-                <p className="help-section-desc">Switch between Month and Week views. Click a date in Month view to jump to that week. Select a day in Week view to see and check off todos for that day — past completions are preserved</p>
+                <p className="help-section-title">{t.helpCalendarTitle}</p>
+                <p className="help-section-desc">{t.helpCalendarDesc}</p>
               </div>
             </div>
           </div>
@@ -128,8 +131,8 @@ function HelpModal({ onClose }) {
                 </svg>
               </span>
               <div>
-                <p className="help-section-title">Archive</p>
-                <p className="help-section-desc">The X button moves a todo to the Archive — not delete. Open the archive (📦 icon) to restore or permanently delete items</p>
+                <p className="help-section-title">{t.helpArchiveTitle}</p>
+                <p className="help-section-desc">{t.helpArchiveDesc}</p>
               </div>
             </div>
           </div>
@@ -147,8 +150,8 @@ function HelpModal({ onClose }) {
                 </svg>
               </span>
               <div>
-                <p className="help-section-title">Stickers</p>
-                <p className="help-section-desc">Click the sticker icon in the top bar to open the sticker panel. Upload images, then drag them onto the app. Click a placed sticker to select it — drag to move, use the corner handle to resize, or press X to remove. Each page (Today, Calendar Month, Week) has its own stickers</p>
+                <p className="help-section-title">{t.helpStickerTitle}</p>
+                <p className="help-section-desc">{t.helpStickerDesc}</p>
               </div>
             </div>
           </div>
@@ -165,8 +168,8 @@ function HelpModal({ onClose }) {
                 </svg>
               </span>
               <div>
-                <p className="help-section-title">Settings</p>
-                <p className="help-section-desc">Change the color theme, customize the top banner (image, background color, text), under the ⚙️ settings icon</p>
+                <p className="help-section-title">{t.helpSettingsTitle}</p>
+                <p className="help-section-desc">{t.helpSettingsDesc}</p>
               </div>
             </div>
           </div>
@@ -183,15 +186,15 @@ function HelpModal({ onClose }) {
                 </svg>
               </span>
               <div>
-                <p className="help-section-title">Always on Top</p>
-                <p className="help-section-desc">Click the pin icon to keep MomoTodo on top of all other windows. Click again to disable</p>
+                <p className="help-section-title">{t.helpPinTitle}</p>
+                <p className="help-section-desc">{t.helpPinDesc}</p>
               </div>
             </div>
           </div>
 
         </div>
         <div className="modal-footer" style={{ justifyContent: 'center' }}>
-          <button className="btn-submit" onClick={onClose}>Got it!</button>
+          <button className="btn-submit" onClick={onClose}>{t.gotIt}</button>
         </div>
       </div>
     </div>

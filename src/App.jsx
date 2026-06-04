@@ -89,6 +89,7 @@ function App() {
   const [mainView, setMainView] = useState('todo')
   const [calView, setCalView] = useState('month')
   const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'mint')
+  const [lang, setLang] = useState(() => localStorage.getItem('momo-lang') || 'en')
   const [showHelp, setShowHelp] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [stickerPanelOpen, setStickerPanelOpen] = useState(false)
@@ -107,17 +108,13 @@ function App() {
   }, [todos])
 
   useEffect(() => {
-    window.electronAPI?.onShowStartupPrompt(() => {
-      setShowStartupPrompt(true)
-    })
-    window.electronAPI?.onShowHelp(() => {
-      setShowHelp(true)
-    })
-    window.electronAPI?.onUpdateAvailable(() => {
-      setHasUpdate(true)
-    })
+    localStorage.setItem('momo-lang', lang)
+  }, [lang])
 
-    // 이미 업데이트 감지됐는지 확인
+  useEffect(() => {
+    window.electronAPI?.onShowStartupPrompt(() => setShowStartupPrompt(true))
+    window.electronAPI?.onShowHelp(() => setShowHelp(true))
+    window.electronAPI?.onUpdateAvailable(() => setHasUpdate(true))
     window.electronAPI?.getUpdateAvailable?.().then(avail => {
       if (avail) setHasUpdate(true)
     })
@@ -153,18 +150,20 @@ function App() {
         stickerPanelOpen={stickerPanelOpen}
         onToggleStickerPanel={handleToggleStickerPanel}
         hasUpdate={hasUpdate}
+        lang={lang}
       />
 
       <div className="app-body">
         <main className="main-content">
           {mainView === 'todo' ? (
-            <TodoList todos={todos} setTodos={setTodos} />
+            <TodoList todos={todos} setTodos={setTodos} lang={lang} />
           ) : (
             <CalendarView
               todos={todos}
               setTodos={setTodos}
               calView={calView}
               setCalView={setCalView}
+              lang={lang}
             />
           )}
         </main>
@@ -175,6 +174,7 @@ function App() {
           <StickerPanel
             onClose={handleToggleStickerPanel}
             pageKey={pageKey}
+            lang={lang}
           />
         )}
       </div>
@@ -183,16 +183,21 @@ function App() {
         <ArchiveModal
           onClose={() => setShowArchive(false)}
           onRestore={(todo) => setTodos(prev => [...prev, todo])}
+          lang={lang}
         />
       )}
       {showHelp && (
-        <HelpModal onClose={() => setShowHelp(false)} />
+        <HelpModal onClose={() => setShowHelp(false)} lang={lang} />
       )}
       {showSettings && (
-        <SettingsModal onClose={() => setShowSettings(false)} />
+        <SettingsModal
+          onClose={() => setShowSettings(false)}
+          lang={lang}
+          setLang={setLang}
+        />
       )}
       {showStartupPrompt && (
-        <StartupModal onClose={() => setShowStartupPrompt(false)} />
+        <StartupModal onClose={() => setShowStartupPrompt(false)} lang={lang} />
       )}
     </div>
   )

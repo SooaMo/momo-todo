@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { getT } from '../i18n'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-function AddTodoModal({ onClose, onAdd, initialData }) {
+function AddTodoModal({ onClose, onAdd, initialData, lang }) {
+  const t = getT(lang)
   const isEdit = !!initialData
   const [title, setTitle] = useState(initialData?.title || '')
   const [type, setType] = useState(initialData?.type || 'daily')
@@ -37,6 +39,7 @@ function AddTodoModal({ onClose, onAdd, initialData }) {
       label: labelText ? { text: labelText, color: labelColor } : null,
       memo: memo || null,
       completed: initialData?.completed || false,
+      completions: initialData?.completions || {},
       createdAt: initialData?.createdAt || new Date().toISOString(),
     }
     onAdd(todo)
@@ -47,32 +50,38 @@ function AddTodoModal({ onClose, onAdd, initialData }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">{isEdit ? 'Edit Todo' : 'Add Todo'}</h2>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <h2 className="modal-title">{isEdit ? t.editTodoTitle : t.addTodoTitle}</h2>
+          <button className="modal-close" onClick={onClose}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
 
         <div className="modal-body">
           <div className="form-group">
-            <label className="form-label">Title *</label>
+            <label className="form-label">{t.titleLabel}</label>
             <input
               className="form-input"
               type="text"
-              placeholder="What do you need to do?"
+              placeholder={t.titlePlaceholder}
               value={title}
               onChange={e => setTitle(e.target.value)}
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Type</label>
+            <label className="form-label">{t.typeLabel}</label>
             <div className="btn-group">
-              {['daily', 'weekly', 'date', 'one-time'].map(t => (
-                <button
-                  key={t}
-                  className={`btn-option ${type === t ? 'active' : ''}`}
-                  onClick={() => setType(t)}
-                >
-                  {t}
+              {[
+                { id: 'daily', label: t.tabDaily },
+                { id: 'weekly', label: t.tabWeekly },
+                { id: 'date', label: t.tabDate },
+                { id: 'one-time', label: t.tabOneTime },
+              ].map(tp => (
+                <button key={tp.id} className={`btn-option ${type === tp.id ? 'active' : ''}`} onClick={() => setType(tp.id)}>
+                  {tp.label}
                 </button>
               ))}
             </div>
@@ -80,7 +89,7 @@ function AddTodoModal({ onClose, onAdd, initialData }) {
 
           {type === 'weekly' && (
             <div className="form-group">
-              <label className="form-label">Days</label>
+              <label className="form-label">{t.daysLabel}</label>
               <div className="btn-group">
                 {DAYS.map(day => (
                   <button
@@ -97,7 +106,7 @@ function AddTodoModal({ onClose, onAdd, initialData }) {
 
           {type === 'date' && (
             <div className="form-group">
-              <label className="form-label">Date Range</label>
+              <label className="form-label">{t.dateRangeLabel}</label>
               <div className="date-range">
                 <input className="form-input" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
                 <span className="date-separator">~</span>
@@ -108,38 +117,42 @@ function AddTodoModal({ onClose, onAdd, initialData }) {
 
           {type === 'one-time' && (
             <div className="form-group">
-              <label className="form-label">Due Date (optional)</label>
+              <label className="form-label">{t.dueDateLabel}</label>
               <input className="form-input" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
             </div>
           )}
 
           <div className="form-group">
-            <label className="form-label">Priority</label>
+            <label className="form-label">{t.priorityLabel}</label>
             <div className="btn-group">
-              {['high', 'mid', 'low'].map(p => (
+              {[
+                { id: 'high', label: t.priorityHigh },
+                { id: 'mid', label: t.priorityMid },
+                { id: 'low', label: t.priorityLow },
+              ].map(p => (
                 <button
-                  key={p}
-                  className={`btn-option priority-${p} ${priority === p ? 'active' : ''}`}
-                  onClick={() => setPriority(p)}
+                  key={p.id}
+                  className={`btn-option priority-${p.id} ${priority === p.id ? 'active' : ''}`}
+                  onClick={() => setPriority(p.id)}
                 >
-                  {p}
+                  {p.label}
                 </button>
               ))}
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Time (optional)</label>
+            <label className="form-label">{t.timeLabel}</label>
             <input className="form-input" type="time" value={time} onChange={e => setTime(e.target.value)} />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Label (optional)</label>
+            <label className="form-label">{t.labelLabel}</label>
             <div className="label-input-group">
               <input
                 className="form-input"
                 type="text"
-                placeholder="Label name"
+                placeholder={t.labelPlaceholder}
                 value={labelText}
                 onChange={e => setLabelText(e.target.value)}
               />
@@ -151,24 +164,23 @@ function AddTodoModal({ onClose, onAdd, initialData }) {
               />
             </div>
           </div>
-          {/* Memo */}
-          <div className="form-group">
-          <label className="form-label">Memo (optional)</label>
-          <textarea
-            className="form-input form-textarea"
-            placeholder="Add a note..."
-            value={memo}
-            onChange={e => setMemo(e.target.value)}
-            rows={3}
-          />
-          </div>
 
+          <div className="form-group">
+            <label className="form-label">{t.memoLabel}</label>
+            <textarea
+              className="form-input form-textarea"
+              placeholder={t.memoPlaceholder}
+              value={memo}
+              onChange={e => setMemo(e.target.value)}
+              rows={3}
+            />
+          </div>
         </div>
 
         <div className="modal-footer">
-          <button className="btn-cancel" onClick={onClose}>Cancel</button>
+          <button className="btn-cancel" onClick={onClose}>{t.cancel}</button>
           <button className="btn-submit" onClick={handleSubmit} disabled={!title.trim()}>
-            {isEdit ? 'Save' : 'Add'}
+            {isEdit ? t.save : t.add}
           </button>
         </div>
       </div>

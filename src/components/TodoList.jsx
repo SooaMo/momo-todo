@@ -16,16 +16,18 @@ import { CSS } from '@dnd-kit/utilities'
 import AddTodoModal from './AddTodoModal'
 import { saveToArchive } from './ArchiveModal'
 import BannerImage from './BannerImage'
+import { getT } from '../i18n'
 
 const STORAGE_KEY = 'momo-todos'
-const TABS = ['all', 'daily', 'weekly', 'date', 'one-time']
+
 const PRIORITY_ORDER = { high: 0, mid: 1, low: 2 }
 
 function formatDateStr(date) {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
 }
 
-function SortableTodoItem({ todo, done, expandedId, setExpandedId, handleToggle, handleArchive, setEditTodo }) {
+function SortableTodoItem({ todo, done, expandedId, setExpandedId, handleToggle, handleArchive, setEditTodo, lang }) {
+  const t = getT(lang)
   const {
     attributes,
     listeners,
@@ -81,8 +83,12 @@ function SortableTodoItem({ todo, done, expandedId, setExpandedId, handleToggle,
           </div>
         </div>
         <div className="todo-meta">
-          <span className={`priority-badge priority-${todo.priority}`}>{todo.priority}</span>
-          <span className="type-badge">{todo.type}</span>
+          <span className={`priority-badge priority-${todo.priority}`}>
+            {todo.priority === 'high' ? t.priorityHigh : todo.priority === 'mid' ? t.priorityMid : t.priorityLow}
+          </span>
+          <span className="type-badge">
+            {todo.type === 'daily' ? t.tabDaily : todo.type === 'weekly' ? t.tabWeekly : todo.type === 'date' ? t.tabDate : t.tabOneTime}
+          </span>
           {todo.time && <span className="time-badge">⏰ {todo.time}</span>}
           {todo.type === 'date' && todo.startDate && (
             <span className="time-badge">📅 {todo.startDate} ~ {todo.endDate}</span>
@@ -107,7 +113,8 @@ function SortableTodoItem({ todo, done, expandedId, setExpandedId, handleToggle,
   )
 }
 
-function TodoList({ todos, setTodos }) {
+function TodoList({ todos, setTodos, lang }) {
+  const t = getT(lang)
   const todayStr = formatDateStr(new Date())
   const [showModal, setShowModal] = useState(false)
   const [editTodo, setEditTodo] = useState(null)
@@ -117,6 +124,14 @@ function TodoList({ todos, setTodos }) {
   const [expandedId, setExpandedId] = useState(null)
   const [manualOrder, setManualOrder] = useState([])
   const dropdownRef = useRef(null)
+
+  const TABS = [
+  { id: 'all', label: t.tabAll },
+  { id: 'daily', label: t.tabDaily },
+  { id: 'weekly', label: t.tabWeekly },
+  { id: 'date', label: t.tabDate },
+  { id: 'one-time', label: t.tabOneTime },
+]
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 5 },
@@ -133,7 +148,6 @@ function TodoList({ todos, setTodos }) {
   }, [])
 
   const handleAdd = (todo) => setTodos(prev => [...prev, todo])
-
   const handleEdit = (updated) => setTodos(prev => prev.map(t => t.id === updated.id ? updated : t))
 
   const handleToggle = (id) => {
@@ -205,9 +219,16 @@ function TodoList({ todos, setTodos }) {
     setManualOrder(newOrder)
   }
 
-  const priorityLabel = activePriority === 'all' ? 'Priority' : activePriority
   const today = new Date()
-  const dateLabel = `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][today.getMonth()]} ${today.getDate()}, ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][today.getDay()]}`
+  const dateLabel = t.dateLabel(
+    today.getMonth(),
+    today.getDate(),
+    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][today.getDay()]
+  )
+  const priorityLabel = activePriority === 'all' ? t.priority
+  : activePriority === 'high' ? t.priorityHigh
+  : activePriority === 'mid' ? t.priorityMid
+  : t.priorityLow
 
   return (
     <div className="todo-list">
@@ -219,11 +240,11 @@ function TodoList({ todos, setTodos }) {
         <div className="tabs">
           {TABS.map(tab => (
             <button
-              key={tab}
-              className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab)}
+              key={tab.id}
+              className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
             >
-              {tab}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -240,16 +261,21 @@ function TodoList({ todos, setTodos }) {
           </button>
           {showPriorityDropdown && (
             <div className="priority-dropdown">
-              {['all', 'high', 'mid', 'low'].map(p => (
+              {[
+                { id: 'all', label: t.priority },
+                { id: 'high', label: t.priorityHigh },
+                { id: 'mid', label: t.priorityMid },
+                { id: 'low', label: t.priorityLow },
+              ].map(p => (
                 <button
-                  key={p}
-                  className={`priority-dropdown-item priority-item-${p} ${activePriority === p ? 'active' : ''}`}
+                  key={p.id}
+                  className={`priority-dropdown-item priority-item-${p.id} ${activePriority === p.id ? 'active' : ''}`}
                   onClick={() => {
-                    setActivePriority(p)
+                    setActivePriority(p.id)
                     setShowPriorityDropdown(false)
                   }}
                 >
-                  {p}
+                  {p.label}
                 </button>
               ))}
             </div>
@@ -258,7 +284,7 @@ function TodoList({ todos, setTodos }) {
       </div>
 
       {filteredTodos.length === 0 ? (
-        <p className="empty-text">No todos for today!</p>
+        <p className="empty-text">{t.noTodos}</p>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={filteredTodos.map(t => t.id)} strategy={verticalListSortingStrategy}>
@@ -273,6 +299,7 @@ function TodoList({ todos, setTodos }) {
                   handleToggle={handleToggle}
                   handleArchive={handleArchive}
                   setEditTodo={setEditTodo}
+                  lang={lang}
                 />
               ))}
             </ul>
@@ -281,15 +308,14 @@ function TodoList({ todos, setTodos }) {
       )}
 
       <button className="add-btn" onClick={() => setShowModal(true)}>
-        + Add Todo
+        {t.addTodo}
       </button>
 
-
       {showModal && (
-        <AddTodoModal onClose={() => setShowModal(false)} onAdd={handleAdd} />
+        <AddTodoModal onClose={() => setShowModal(false)} onAdd={handleAdd} lang={lang} />
       )}
       {editTodo && (
-        <AddTodoModal onClose={() => setEditTodo(null)} onAdd={handleEdit} initialData={editTodo} />
+        <AddTodoModal onClose={() => setEditTodo(null)} onAdd={handleEdit} initialData={editTodo} lang={lang} />
       )}
     </div>
   )

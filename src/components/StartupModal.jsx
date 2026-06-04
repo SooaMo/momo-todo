@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { getT } from '../i18n'
 
-function StartupModal({ onClose }) {
+function StartupModal({ onClose, lang }) {
+  const t = getT(lang)
   const [checked, setChecked] = useState(false)
 
   const handleConfirm = () => {
@@ -17,11 +19,11 @@ function StartupModal({ onClose }) {
     <div className="modal-overlay">
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">Welcome to MomoTodo 🎉</h2>
+          <h2 className="modal-title">{t.welcomeTitle}</h2>
         </div>
         <div className="modal-body">
           <p style={{ fontSize: '0.9rem', color: 'var(--color-text)', lineHeight: 1.6 }}>
-            MomoTodo is ready to use! Would you like to launch it automatically when you start your computer?
+            {t.welcomeDesc}
           </p>
 
           <label className="startup-checkbox-row">
@@ -32,17 +34,17 @@ function StartupModal({ onClose }) {
               style={{ accentColor: 'var(--color-primary)', width: '1rem', height: '1rem' }}
             />
             <span style={{ fontSize: '0.9rem', color: 'var(--color-text)' }}>
-              Launch MomoTodo on startup
+              {t.launchOnStartup}
             </span>
           </label>
 
           <p style={{ fontSize: '0.78rem', color: 'var(--color-text-light)', lineHeight: 1.5 }}>
-            You can change this anytime in Settings.
+            {t.startupNote}
           </p>
         </div>
         <div className="modal-footer">
-          <button className="btn-cancel" onClick={handleSkip}>Skip</button>
-          <button className="btn-submit" onClick={handleConfirm}>Confirm</button>
+          <button className="btn-cancel" onClick={handleSkip}>{t.skip}</button>
+          <button className="btn-submit" onClick={handleConfirm}>{t.confirm}</button>
         </div>
       </div>
     </div>

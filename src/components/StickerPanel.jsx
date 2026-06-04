@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
+import { getT } from '../i18n'
 
-function StickerPanel({ onClose, pageKey }) {
+function StickerPanel({ onClose, pageKey, lang }) {
+  const t = getT(lang)
   const inputRef = useRef(null)
   const [stickers, setStickers] = useState(() => {
     try {
@@ -52,7 +54,7 @@ function StickerPanel({ onClose, pageKey }) {
   return (
     <div className="sticker-side-panel">
       <div className="sticker-panel-header">
-        <span className="sticker-panel-title">Stickers</span>
+        <span className="sticker-panel-title">{t.stickers}</span>
         <button className="topbar-btn" onClick={onClose} title="Close">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/>
@@ -61,11 +63,11 @@ function StickerPanel({ onClose, pageKey }) {
         </button>
       </div>
 
-      <p className="sticker-hint">Drag stickers onto the app. Select to resize or delete.</p>
+      <p className="sticker-hint">{t.dragStickers}</p>
 
       <div className="sticker-library">
         {stickers.length === 0 ? (
-          <p className="sticker-empty">No stickers yet!<br/>Upload some below.</p>
+          <p className="sticker-empty">{t.stickerEmpty.split('\n').map((line, i) => <span key={i}>{line}<br/></span>)}</p>
         ) : (
           stickers.map(sticker => (
             <div
@@ -92,7 +94,7 @@ function StickerPanel({ onClose, pageKey }) {
           <polyline points="17 8 12 3 7 8"/>
           <line x1="12" y1="3" x2="12" y2="15"/>
         </svg>
-        Upload
+        {t.upload}
       </button>
 
       <button className="sticker-clear-btn" onClick={handleClearPage}>
@@ -102,7 +104,7 @@ function StickerPanel({ onClose, pageKey }) {
           <path d="M10 11v6M14 11v6"/>
           <path d="M9 6V4h6v2"/>
         </svg>
-        Clear {pageLabel}
+        {t.clearPage(pageLabel)}
       </button>
 
       <input ref={inputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleUpload} />
