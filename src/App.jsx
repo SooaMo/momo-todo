@@ -14,16 +14,40 @@ const THEME_KEY = 'momo-theme'
 
 const THEMES = {
   mint: {
-    '--color-primary': '#94bba9',
-    '--color-secondary': '#E5EEE4',
-    '--color-accent': '#DC9B9B',
-    '--color-bg': '#F6F4E8',
+  '--color-primary': '#8ecfbe',
+  '--color-secondary': '#e8f7f3',
+  '--color-accent': '#f4a8a0',
+  '--color-bg': '#f5fbf9',
+  '--color-white': '#ffffff',
+  '--color-text': '#2d3d38',
+  '--color-text-light': '#5a8a78',
+  '--topbar-bg': '#8ecfbe',
+  '--title-grad-start': '#5aab94',
+  '--title-grad-end': '#e08888',
+},
+  peach: {
+    '--color-primary': '#e8a87c',
+    '--color-secondary': '#fdf0e8',
+    '--color-accent': '#9b8ec4',
+    '--color-bg': '#fef8f3',
     '--color-white': '#ffffff',
-    '--color-text': '#2d3436',
-    '--color-text-light': '#636e72',
-    '--topbar-bg': '#94bba9',
-    '--title-grad-start': '#5a8f7b',
-    '--title-grad-end': '#c07a7a',
+    '--color-text': '#3d2e24',
+    '--color-text-light': '#a07858',
+    '--topbar-bg': '#e8a87c',
+    '--title-grad-start': '#c07840',
+    '--title-grad-end': '#9b8ec4',
+  },
+  rose: {
+    '--color-primary': '#d4849a',
+    '--color-secondary': '#faeef1',
+    '--color-accent': '#7ba7bc',
+    '--color-bg': '#fdf5f7',
+    '--color-white': '#ffffff',
+    '--color-text': '#3d2430',
+    '--color-text-light': '#a06878',
+    '--topbar-bg': '#d4849a',
+    '--title-grad-start': '#b05870',
+    '--title-grad-end': '#7ba7bc',
   },
   ocean: {
     '--color-primary': '#7ba7bc',
@@ -97,6 +121,7 @@ function App() {
   const [savedWidth, setSavedWidth] = useState(null)
   const [showStartupPrompt, setShowStartupPrompt] = useState(false)
   const [hasUpdate, setHasUpdate] = useState(false)
+  const [settingsTab, setSettingsTab] = useState('graphic')
 
   useEffect(() => {
     applyTheme(theme)
@@ -156,7 +181,12 @@ function App() {
       <div className="app-body">
         <main className="main-content">
           {mainView === 'todo' ? (
-            <TodoList todos={todos} setTodos={setTodos} lang={lang} />
+            <TodoList
+              todos={todos}
+              setTodos={setTodos}
+              lang={lang}
+              onOpenSettings={() => { setSettingsTab('graphic'); setShowSettings(true) }}
+            />
           ) : (
             <CalendarView
               todos={todos}
@@ -194,6 +224,8 @@ function App() {
           onClose={() => setShowSettings(false)}
           lang={lang}
           setLang={setLang}
+          onPreviewTheme={(themeId) => themeId ? applyTheme(themeId) : applyTheme(theme)}
+          initialTab={settingsTab}
         />
       )}
       {showStartupPrompt && (

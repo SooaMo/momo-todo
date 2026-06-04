@@ -113,7 +113,7 @@ function SortableTodoItem({ todo, done, expandedId, setExpandedId, handleToggle,
   )
 }
 
-function TodoList({ todos, setTodos, lang }) {
+function TodoList({ todos, setTodos, lang, onOpenSettings }) {
   const t = getT(lang)
   const todayStr = formatDateStr(new Date())
   const [showModal, setShowModal] = useState(false)
@@ -232,7 +232,7 @@ function TodoList({ todos, setTodos, lang }) {
 
   return (
     <div className="todo-list">
-      <BannerImage imageKey="momo-banner-top" className="banner-top" />
+      <BannerImage imageKey="momo-banner-top" className="banner-top" onOpenSettings={onOpenSettings} />
 
       <div className="today-label">{dateLabel}</div>
 

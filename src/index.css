@@ -996,7 +996,12 @@ body {
 
 .settings-help-btn:hover { background-color: var(--color-secondary); }
 
-.settings-theme-grid { display: flex; flex-direction: column; gap: 0.25rem; }
+.settings-theme-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
 
 .settings-theme-btn {
   display: flex;
@@ -1494,4 +1499,11 @@ body {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
   color: white;
+}
+
+.settings-data-desc {
+  font-size: 0.78rem;
+  color: var(--color-text-light);
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
 }

@@ -23,7 +23,9 @@ const BG_COLORS = [
   { label: 'Accent', value: 'var(--color-accent)' },
 ]
 const THEMES = [
-  { id: 'mint', label: 'Mint', color: '#94bba9' },
+  { id: 'mint', label: 'Mint', color: '#7ec8b0' },
+  { id: 'peach', label: 'Peach', color: '#e8a87c' },
+  { id: 'rose', label: 'Rose', color: '#d4849a' },
   { id: 'ocean', label: 'Ocean', color: '#7ba7bc' },
   { id: 'lavender', label: 'Lavender', color: '#9b8ec4' },
   { id: 'dark', label: 'Dark', color: '#2a3442' },
@@ -262,6 +264,94 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange, lang }) {
   )
 }
 
+function DataSection({ lang }) {
+  const t = getT(lang)
+  const [exportMsg, setExportMsg] = useState('')
+  const [importMsg, setImportMsg] = useState('')
+  const importRef = useRef(null)
+
+  const handleExport = () => {
+    const data = {}
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      data[key] = localStorage.getItem(key)
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `momotodo-backup-${new Date().toISOString().slice(0,10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    setExportMsg(t.exportSuccess)
+    setTimeout(() => setExportMsg(''), 3000)
+  }
+
+    const handleImport = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result)
+        setImportMsg(t.importSuccess)
+        // 메시지 보여주고 바로 저장 후 reload
+        requestAnimationFrame(() => {
+          localStorage.clear()
+          Object.entries(data).forEach(([key, value]) => {
+            localStorage.setItem(key, value)
+          })
+          setTimeout(() => window.location.reload(), 500)
+        })
+      } catch {
+        setImportMsg(t.importError)
+        setTimeout(() => setImportMsg(''), 3000)
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  return (
+    <div className="settings-section">
+      <div className="settings-banner-section">
+        <div className="settings-banner-header">
+          <span className="settings-banner-label">{t.exportData}</span>
+        </div>
+        <p className="settings-data-desc">{t.exportDesc}</p>
+        <button className="update-btn" onClick={handleExport}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          {t.exportData}
+        </button>
+        {exportMsg && <p className="update-status update-ok">{exportMsg}</p>}
+      </div>
+
+      <div className="help-divider" />
+
+      <div className="settings-banner-section">
+        <div className="settings-banner-header">
+          <span className="settings-banner-label">{t.importData}</span>
+        </div>
+        <p className="settings-data-desc">{t.importDesc}</p>
+        <button className="update-btn" onClick={() => importRef.current?.click()}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          {t.importData}
+        </button>
+        {importMsg && <p className="update-status update-ok">{importMsg}</p>}
+        <input ref={importRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleImport} />
+      </div>
+    </div>
+  )
+}
+
 function UpdateSection({ lang }) {
   const t = getT(lang)
   const [status, setStatus] = useState('idle')
@@ -334,13 +424,14 @@ function UpdateSection({ lang }) {
   )
 }
 
-function SettingsModal({ onClose, lang, setLang }) {
+function SettingsModal({ onClose, lang, setLang, onPreviewTheme, initialTab }) {
+  const [tab, setTab] = useState(initialTab || 'graphic')
   const t = getT(lang)
-  const [tab, setTab] = useState('graphic')
   const [selectedLang, setSelectedLang] = useState(lang)
   const [showHelp, setShowHelp] = useState(false)
   const [currentTheme, setCurrentTheme] = useState(() => localStorage.getItem('momo-theme') || 'mint')
   const [appVersion, setAppVersion] = useState('...')
+  const [hoveredTheme, setHoveredTheme] = useState(null)
 
 useEffect(() => {
   window.electronAPI?.getAppVersion?.().then(v => setAppVersion(v))
@@ -391,6 +482,7 @@ useEffect(() => {
           <div className="settings-tabs">
             {[
               { id: 'graphic', label: t.graphic },
+              { id: 'data', label: t.data },
               { id: 'help', label: t.help },
               { id: 'about', label: t.about },
             ].map(item => (
@@ -402,45 +494,50 @@ useEffect(() => {
 
           <div className="modal-body">
            {tab === 'graphic' && (
-  <div className="settings-section">
-    {/* Language */}
-    <div className="settings-banner-section">
-      <div className="settings-banner-header">
-        <span className="settings-banner-label">{t.language}</span>
-      </div>
-      <div className="settings-position-btns" style={{ marginTop: '0.5rem' }}>
-        {[
-          { id: 'en', label: 'English' },
-          { id: 'kr', label: '한국어' },
-        ].map(l => (
-          <button
-            key={l.id}
-            className={`settings-pos-btn ${selectedLang === l.id ? 'active' : ''}`}
-            onClick={() => setSelectedLang(l.id)}
-          >
-            {l.label}
-          </button>
-        ))}
-      </div>
-    </div>
+            <div className="settings-section">
+              {/* Language */}
+              <div className="settings-banner-section">
+                <div className="settings-banner-header">
+                  <span className="settings-banner-label">{t.language}</span>
+                </div>
+                <div className="settings-position-btns" style={{ marginTop: '0.5rem' }}>
+                  {[
+                    { id: 'en', label: 'English' },
+                    { id: 'kr', label: '한국어' },
+                  ].map(l => (
+                    <button
+                      key={l.id}
+                      className={`settings-pos-btn ${selectedLang === l.id ? 'active' : ''}`}
+                      onClick={() => setSelectedLang(l.id)}
+                    >
+                      {l.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-    <div className="help-divider" />
+              <div className="help-divider" />
 
-    {/* Theme */}
-    <div className="settings-banner-section">
-      <div className="settings-banner-header">
-        <span className="settings-banner-label">{t.theme}</span>
-      </div>
-      <div className="settings-theme-grid">
-        {THEMES.map(t => (
+              {/* Theme */}
+              <div className="settings-banner-section">
+                <div className="settings-banner-header">
+                  <span className="settings-banner-label">{t.theme}</span>
+                </div>
+                  <div className="settings-theme-grid">
+                    {THEMES.map(theme => (
                       <button
-                        key={t.id}
-                        className={`settings-theme-btn ${currentTheme === t.id ? 'active' : ''}`}
-                        onClick={() => setCurrentTheme(t.id)}
+                        key={theme.id}
+                        className={`settings-theme-btn ${currentTheme === theme.id ? 'active' : ''}`}
+                        onClick={() => setCurrentTheme(theme.id)}
+                        onMouseEnter={() => onPreviewTheme(theme.id)}
+                        onMouseLeave={() => onPreviewTheme(null)}
+                        style={{
+                          borderColor: currentTheme === theme.id ? theme.color : 'transparent',
+                        }}
                       >
-                        <span className="theme-dot" style={{ backgroundColor: t.color }} />
-                        <span>{t.label}</span>
-                        {currentTheme === t.id && (
+                        <span className="theme-dot" style={{ backgroundColor: theme.color }} />
+                        <span>{theme.label}</span>
+                        {currentTheme === theme.id && (
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto' }}>
                             <polyline points="20 6 9 17 4 12"/>
                           </svg>
@@ -451,16 +548,16 @@ useEffect(() => {
                 </div>
                 
 
-<div className="help-divider" />
+                    <div className="help-divider" />
 
-                <BannerSetting
-                  imageKey="momo-banner-top"
-                  label={t.bannerToday}
-                  settings={settings}
-                  onSettingsChange={handleSettingsChange}
-                  lang={lang}
-                />
-              </div>
+                                    <BannerSetting
+                                      imageKey="momo-banner-top"
+                                      label={t.bannerToday}
+                                      settings={settings}
+                                      onSettingsChange={handleSettingsChange}
+                                      lang={lang}
+                                    />
+                                  </div>
             )}
 
             {tab === 'help' && (
@@ -486,6 +583,8 @@ useEffect(() => {
                 </button>
               </div>
             )}
+
+            {tab === 'data' && <DataSection lang={lang} />}
 
             {tab === 'about' && (
               <div className="settings-section about-section">

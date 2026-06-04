@@ -133,6 +133,13 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang }) {
   const selectedDateStr = formatDateStr(selectedDate)
   const selectedDayTodos = getTodosForDate(todos, selectedDate, activeTypes)
 
+  const sortedDayTodos = [...selectedDayTodos].sort((a, b) => {
+  const aDone = isCompletedOnDate(a, selectedDateStr)
+  const bDone = isCompletedOnDate(b, selectedDateStr)
+  if (aDone !== bDone) return aDone ? 1 : -1
+  return 0
+})
+
   const isAllSelected = activeTypes.length === TODO_TYPES.length
 
   return (
@@ -316,11 +323,11 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang }) {
                 {selectedDate.getMonth()+1}/{selectedDate.getDate()} ({DAY_LABELS[selectedDate.getDay()]})
               </span>
             </div>
-            {selectedDayTodos.length === 0 ? (
+            {sortedDayTodos.length === 0 ? (
               <p className="empty-text" style={{ marginTop: '1rem' }}>{t.noTodosDay}</p>
             ) : (
               <ul className="todo-items">
-                {selectedDayTodos.map(todo => {
+                {sortedDayTodos.map(todo => {
                   const done = isCompletedOnDate(todo, selectedDateStr)
                   const color = getTodoColor(todo)
                   return (
