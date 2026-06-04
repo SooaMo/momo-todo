@@ -1,9 +1,13 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import AddTodoModal from './AddTodoModal'
 import { getT } from '../i18n'
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const TODO_TYPES = ['daily', 'weekly', 'date', 'one-time']
+const ROW_HEIGHT = 1.4 // rem
+const DATE_NUM_HEIGHT = 1.4 // rem - 날짜 숫자 높이
+const CHIP_HEIGHT = 1.2 // rem - chip 높이
+const CHIP_GAP = 0.15 // rem
 
 function formatDateStr(date) {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
@@ -16,6 +20,9 @@ function isSameDay(a, b) {
 }
 
 function isCompletedOnDate(todo, dateStr) {
+  if (todo.type === 'date') {
+    return !!(todo.completions && Object.keys(todo.completions).length > 0)
+  }
   return !!(todo.completions?.[dateStr])
 }
 
@@ -44,6 +51,8 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang }) {
   const [editTodo, setEditTodo] = useState(null)
   const [activeTypes, setActiveTypes] = useState(TODO_TYPES)
   const [showFilter, setShowFilter] = useState(false)
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [completionFilter, setCompletionFilter] = useState('active')
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -100,9 +109,23 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang }) {
     return cells
   }
 
-  const buildDateSpans = (cells) => {
-    const dateTodos = todos.filter(t => t.type === 'date' && t.startDate && t.endDate && activeTypes.includes('date'))
+  const buildDateSpans = (cells, filter) => {
+  const dateTodos = todos
+  .filter(t => t.type === 'date' && t.startDate && t.endDate && activeTypes.includes('date'))
+  .filter(t => {
+    const hasAnyCompletion = t.completions && Object.keys(t.completions).length > 0
+    if (completionFilter === 'active') return !hasAnyCompletion
+    if (completionFilter === 'completed') return hasAnyCompletion
+    return true
+  })
+  .sort((a, b) => {
+    const order = { high: 0, mid: 1, low: 2 }
+    return (order[a.priority] ?? 1) - (order[b.priority] ?? 1)
+  })
+
     const spans = []
+    const rowOccupancy = {}
+
     dateTodos.forEach(todo => {
       cells.forEach((date, cellIndex) => {
         if (!date) return
@@ -118,29 +141,70 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang }) {
             spanLen++
             j++
           }
-          spans.push({ todo, cellIndex, spanLen, isFirstCell: dateStr === todo.startDate })
+
+          let row = 0
+          while (true) {
+            let rowFree = true
+            for (let k = cellIndex; k < cellIndex + spanLen; k++) {
+              if (rowOccupancy[k]?.has(row)) { rowFree = false; break }
+            }
+            if (rowFree) break
+            row++
+          }
+
+          for (let k = cellIndex; k < cellIndex + spanLen; k++) {
+            if (!rowOccupancy[k]) rowOccupancy[k] = new Set()
+            rowOccupancy[k].add(row)
+          }
+
+          spans.push({ todo, cellIndex, spanLen, isFirstCell: dateStr === todo.startDate, row })
         }
       })
     })
-    return spans
+    return { spans, rowOccupancy }
   }
 
   const cells = buildMonthGrid()
-  const dateSpans = buildDateSpans(cells)
+  const { spans: dateSpans, rowOccupancy } = buildDateSpans(cells, completionFilter)
   const weeks = []
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
+
+  // 각 셀마다 date span이 몇 개 row를 차지하는지 계산
+  const getMaxRowForCell = (cellIndex) => {
+    if (!rowOccupancy[cellIndex]) return 0
+    return rowOccupancy[cellIndex].size
+  }
 
   const selectedDateStr = formatDateStr(selectedDate)
   const selectedDayTodos = getTodosForDate(todos, selectedDate, activeTypes)
 
-  const sortedDayTodos = [...selectedDayTodos].sort((a, b) => {
-  const aDone = isCompletedOnDate(a, selectedDateStr)
-  const bDone = isCompletedOnDate(b, selectedDateStr)
-  if (aDone !== bDone) return aDone ? 1 : -1
-  return 0
-})
+  const sortedDayTodos = [...selectedDayTodos]
+  .filter(todo => {
+    const done = isCompletedOnDate(todo, selectedDateStr)
+    if (completionFilter === 'active') return !done
+    if (completionFilter === 'completed') return done
+    return true
+  })
+  .sort((a, b) => {
+    const aDone = isCompletedOnDate(a, selectedDateStr)
+    const bDone = isCompletedOnDate(b, selectedDateStr)
+    if (aDone !== bDone) return aDone ? 1 : -1
+    return 0
+  })
 
   const isAllSelected = activeTypes.length === TODO_TYPES.length
+
+  const filterRef = useRef(null)
+
+useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (filterRef.current && !filterRef.current.contains(e.target)) {
+      setShowFilter(false)
+    }
+  }
+  document.addEventListener('mousedown', handleClickOutside)
+  return () => document.removeEventListener('mousedown', handleClickOutside)
+}, [])
 
   return (
     <div className="calendar-view">
@@ -152,12 +216,50 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang }) {
           }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <span className="cal-title">
-            {calView === 'month'
-              ? `${MONTH_NAMES[month]} ${year}`
-              : `${getWeekDates()[0].getMonth()+1}/${getWeekDates()[0].getDate()} — ${getWeekDates()[6].getMonth()+1}/${getWeekDates()[6].getDate()}`
-            }
-          </span>
+
+          <div style={{ position: 'relative' }}>
+            <button className="cal-title-btn" onClick={() => setShowDatePicker(prev => !prev)}>
+              {calView === 'month'
+                ? `${MONTH_NAMES[month]} ${year}`
+                : `${getWeekDates()[0].getMonth()+1}/${getWeekDates()[0].getDate()} — ${getWeekDates()[6].getMonth()+1}/${getWeekDates()[6].getDate()}`
+              }
+            </button>
+
+            {showDatePicker && calView === 'month' && (
+              <div className="cal-date-picker">
+                <div className="cal-picker-row">
+                  <button className="cal-picker-arrow" onClick={() => setCurrentDate(new Date(year - 1, month, 1))}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                  </button>
+                  <span className="cal-picker-value">{year}</span>
+                  <button className="cal-picker-arrow" onClick={() => setCurrentDate(new Date(year + 1, month, 1))}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                </div>
+
+                <div className="cal-picker-months">
+                  {MONTH_NAMES.map((m, i) => (
+                    <button
+                      key={i}
+                      className={`cal-picker-month ${i === month ? 'active' : ''}`}
+                      onClick={() => { setCurrentDate(new Date(year, i, 1)); setShowDatePicker(false) }}
+                    >
+                      {m.slice(0, 3)}
+                    </button>
+                  ))}
+                </div>
+
+                <button className="cal-picker-today" onClick={() => {
+                  setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1))
+                  setSelectedDate(today)
+                  setShowDatePicker(false)
+                }}>
+                  Today
+                </button>
+              </div>
+            )}
+          </div>
+
           <button className="cal-nav-btn" onClick={() => {
             if (calView === 'month') setCurrentDate(new Date(year, month + 1, 1))
             else { const d = new Date(selectedDate); d.setDate(d.getDate() + 7); setSelectedDate(d) }
@@ -167,8 +269,7 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang }) {
         </div>
 
         <div className="cal-right">
-          {/* Filter button */}
-          <div className="cal-filter-wrap">
+          <div className="cal-filter-wrap" ref={filterRef}>
             <button
               className={`cal-filter-btn ${!isAllSelected ? 'active' : ''}`}
               onClick={() => setShowFilter(prev => !prev)}
@@ -180,29 +281,61 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang }) {
             </button>
             {showFilter && (
               <div className="cal-filter-dropdown">
-                {[
-                  { id: 'daily', label: t.tabDaily },
-                  { id: 'weekly', label: t.tabWeekly },
-                  { id: 'date', label: t.tabDate },
-                  { id: 'one-time', label: t.tabOneTime },
-                ].map(type => (
-                  <button
-                    key={type.id}
-                    className={`cal-filter-item ${activeTypes.includes(type.id) ? 'active' : ''}`}
-                    onClick={() => toggleType(type.id)}
-                  >
-                    <span className={`cal-filter-check ${activeTypes.includes(type.id) ? 'checked' : ''}`}>
-                      {activeTypes.includes(type.id) && (
-                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                      )}
-                    </span>
-                    {type.label}
-                  </button>
-                ))}
+                <div className="cal-filter-cols">
+                  <div className="cal-filter-col">
+                    <span className="cal-filter-col-label">Type</span>
+                    {[
+                      { id: 'daily', label: t.tabDaily },
+                      { id: 'weekly', label: t.tabWeekly },
+                      { id: 'date', label: t.tabDate },
+                      { id: 'one-time', label: t.tabOneTime },
+                    ].map(type => (
+                      <button
+                        key={type.id}
+                        className={`cal-filter-item ${activeTypes.includes(type.id) ? 'active' : ''}`}
+                        onClick={() => toggleType(type.id)}
+                      >
+                        <span className={`cal-filter-check ${activeTypes.includes(type.id) ? 'checked' : ''}`}>
+                          {activeTypes.includes(type.id) && (
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          )}
+                        </span>
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="cal-filter-divider-v" />
+
+                  <div className="cal-filter-col">
+                    <span className="cal-filter-col-label">Status</span>
+                    {[
+                      { id: 'active', label: t.filterActive },
+                      { id: 'completed', label: t.filterCompleted },
+                      { id: 'all', label: t.filterAll },
+                    ].map(f => (
+                      <button
+                        key={f.id}
+                        className={`cal-filter-item ${completionFilter === f.id ? 'active' : ''}`}
+                        onClick={() => setCompletionFilter(f.id)}
+                      >
+                        <span className={`cal-filter-check ${completionFilter === f.id ? 'checked' : ''}`}>
+                          {completionFilter === f.id && (
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          )}
+                        </span>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
+
           </div>
 
           <div className="cal-view-tabs">
@@ -222,27 +355,54 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang }) {
           </div>
           {weeks.map((week, weekIdx) => {
             const weekStartIndex = weekIdx * 7
-            const weekSpans = dateSpans.filter(s =>
-              s.cellIndex >= weekStartIndex && s.cellIndex < weekStartIndex + 7
-            )
+
+            // 이번 주의 최대 date span row 수 계산
+            const maxSpanRows = Math.max(0, ...week.map((_, i) => getMaxRowForCell(weekStartIndex + i)))
+
+            const weekSpans = dateSpans.filter(({ todo }) => {
+                if (completionFilter === 'all') return true
+                // 기간 중 한번이라도 체크했는지 확인
+                const hasAnyCompletion = todo.completions && Object.keys(todo.completions).length > 0
+                if (completionFilter === 'active') return !hasAnyCompletion
+                if (completionFilter === 'completed') return hasAnyCompletion
+                return true
+              })
+
+            // date span들이 차지하는 높이
+            const spanAreaHeight = maxSpanRows > 0 ? DATE_NUM_HEIGHT + maxSpanRows * ROW_HEIGHT + 0.2 : DATE_NUM_HEIGHT
+
             return (
               <div key={weekIdx} className="month-week-row">
                 <div className="month-week-dates">
                   {week.map((date, i) => {
-                    if (!date) return <div key={i} className="month-cell empty" />
+                    if (!date) return <div key={i} className="month-cell empty" style={{ minHeight: `${spanAreaHeight + 2.5}rem` }} />
                     const dateStr = formatDateStr(date)
                     const isToday = isSameDay(date, today)
                     const isSelected = isSameDay(date, selectedDate)
-                    const regularTodos = getTodosForDate(todos, date, activeTypes).filter(t => t.type !== 'date')
+                    const regularTodos = getTodosForDate(todos, date, activeTypes)
+                        .filter(t => t.type !== 'date')
+                        .filter(t => {
+                          if (completionFilter === 'active') return !isCompletedOnDate(t, dateStr)
+                          if (completionFilter === 'completed') return isCompletedOnDate(t, dateStr)
+                          return true
+                        })
+                    const maxSpanRowsForCell = getMaxRowForCell(weekStartIndex + i)
+                    const TOTAL_LIMIT = 5
+                    const availableChipSlots = Math.max(0, TOTAL_LIMIT - maxSpanRowsForCell)
+                    const visibleChips = regularTodos.slice(0, availableChipSlots)
+                    const hiddenCount = (regularTodos.length - visibleChips.length)
                     return (
                       <div
                         key={i}
                         className={`month-cell ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
+                        style={{ minHeight: `${spanAreaHeight + 2.5}rem` }}
                         onClick={() => { setSelectedDate(date); setCalView('week') }}
                       >
                         <span className="month-cell-date">{date.getDate()}</span>
+                        {/* date span 자리만큼 빈 공간 */}
+                      <div style={{ height: `${maxSpanRows > 0 ? maxSpanRows * ROW_HEIGHT + 0.2 : 0}rem` }} />
                         <div className="month-cell-chips">
-                          {regularTodos.slice(0, 2).map(todo => {
+                          {visibleChips.map(todo => {
                             const done = isCompletedOnDate(todo, dateStr)
                             const color = getTodoColor(todo)
                             return (
@@ -256,28 +416,32 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang }) {
                               </div>
                             )
                           })}
-                          {regularTodos.length > 2 && (
-                            <span className="month-more">+{regularTodos.length - 2}</span>
+                          {hiddenCount > 0 && (
+                            <span className="month-more">+{hiddenCount}</span>
                           )}
                         </div>
                       </div>
                     )
                   })}
                 </div>
-                {weekSpans.map(({ todo, cellIndex, spanLen, isFirstCell }) => {
+                {weekSpans.map(({ todo, cellIndex, spanLen, isFirstCell, row }) => {
                   const localIndex = cellIndex - weekStartIndex
                   const color = getTodoColor(todo)
                   const firstDateOfSpanInWeek = week[localIndex]
                   const done = firstDateOfSpanInWeek ? isCompletedOnDate(todo, formatDateStr(firstDateOfSpanInWeek)) : false
                   return (
                     <div key={`${todo.id}-${cellIndex}`} className="month-span-bar" style={{
-                      left: `calc(${localIndex / 7 * 100}% + 0.1rem)`,
-                      width: `calc(${spanLen / 7 * 100}% - 0.2rem)`,
-                      backgroundColor: color + '50',
-                      borderLeft: isFirstCell ? `2.5px solid ${color}` : 'none',
-                      opacity: done ? 0.45 : 1,
-                    }}>
-                      {isFirstCell && (
+                        left: `calc(${localIndex / 7 * 100}% + 0.1rem)`,
+                        width: `calc(${spanLen / 7 * 100}% - 0.2rem)`,
+                        top: `calc(${DATE_NUM_HEIGHT + row * ROW_HEIGHT}rem)`,
+                        backgroundColor: color + '50',
+                        borderLeft: isFirstCell ? `2.5px solid ${color}` : 'none',
+                        borderRadius: isFirstCell
+                          ? (localIndex + spanLen >= 7 ? '0.2rem 0 0 0.2rem' : '0.2rem')
+                          : (localIndex + spanLen >= 7 ? '0' : '0 0.2rem 0.2rem 0'),
+                        opacity: done ? 0.45 : 1,
+                      }}>
+                      {(isFirstCell || localIndex === 0) && (
                         <span className="month-span-title" style={{ textDecoration: done ? 'line-through' : 'none' }}>
                           {todo.title}
                         </span>

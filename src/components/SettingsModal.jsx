@@ -524,20 +524,21 @@ useEffect(() => {
                   <span className="settings-banner-label">{t.theme}</span>
                 </div>
                   <div className="settings-theme-grid">
-                    {THEMES.map(theme => (
+                    {THEMES.map(th => (
                       <button
-                        key={theme.id}
-                        className={`settings-theme-btn ${currentTheme === theme.id ? 'active' : ''}`}
-                        onClick={() => setCurrentTheme(theme.id)}
-                        onMouseEnter={() => onPreviewTheme(theme.id)}
-                        onMouseLeave={() => onPreviewTheme(null)}
+                        key={th.id}
+                        className={`settings-theme-btn ${currentTheme === th.id ? 'active' : ''}`}
+                        onClick={() => {
+                          setCurrentTheme(th.id)
+                          onPreviewTheme(th.id)
+                        }}
                         style={{
-                          borderColor: currentTheme === theme.id ? theme.color : 'transparent',
+                          borderColor: currentTheme === th.id ? th.color : 'transparent',
                         }}
                       >
-                        <span className="theme-dot" style={{ backgroundColor: theme.color }} />
-                        <span>{theme.label}</span>
-                        {currentTheme === theme.id && (
+                        <span className="theme-dot" style={{ backgroundColor: th.color }} />
+                        <span>{th.label}</span>
+                        {currentTheme === th.id && (
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto' }}>
                             <polyline points="20 6 9 17 4 12"/>
                           </svg>

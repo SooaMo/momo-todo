@@ -221,7 +221,10 @@ function App() {
       )}
       {showSettings && (
         <SettingsModal
-          onClose={() => setShowSettings(false)}
+          onClose={() => {
+            applyTheme(theme) // 닫을때 원래 테마로 복원
+            setShowSettings(false)
+          }}
           lang={lang}
           setLang={setLang}
           onPreviewTheme={(themeId) => themeId ? applyTheme(themeId) : applyTheme(theme)}

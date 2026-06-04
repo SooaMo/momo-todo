@@ -1,3 +1,4 @@
+import React from 'react'
 import { useState, useEffect, useRef } from 'react'
 import {
   DndContext,
@@ -26,7 +27,7 @@ function formatDateStr(date) {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
 }
 
-function SortableTodoItem({ todo, done, expandedId, setExpandedId, handleToggle, handleArchive, setEditTodo, lang }) {
+function SortableTodoItem({ todo, done, expandedIds, setExpandedIds, handleToggle, handleArchive, setEditTodo, lang }) {
   const t = getT(lang)
   const {
     attributes,
@@ -58,14 +59,21 @@ function SortableTodoItem({ todo, done, expandedId, setExpandedId, handleToggle,
       <div className="todo-info">
         <div
           className="todo-title-row"
-          onClick={() => todo.memo && setExpandedId(expandedId === todo.id ? null : todo.id)}
+          onClick={() => {
+            if (!todo.memo) return
+            setExpandedIds(prev => {
+              const next = new Set(prev)
+              next.has(todo.id) ? next.delete(todo.id) : next.add(todo.id)
+              return next
+            })
+          }}
           style={{ cursor: todo.memo ? 'pointer' : 'default' }}
         >
           <span className="todo-title">{todo.title}</span>
           <div className="todo-actions">
             {todo.memo && (
               <span className="memo-indicator">
-                {expandedId === todo.id ? '▲' : '▼'}
+                {expandedIds.has(todo.id) ? '▲' : '▼'}
               </span>
             )}
             <button className="todo-edit" onClick={e => { e.stopPropagation(); setEditTodo(todo) }}>
@@ -105,12 +113,40 @@ function SortableTodoItem({ todo, done, expandedId, setExpandedId, handleToggle,
             </span>
           )}
         </div>
-        {todo.memo && expandedId === todo.id && (
-          <div className="todo-memo">{todo.memo}</div>
+        {todo.memo && expandedIds.has(todo.id) && (
+          <div className="todo-memo">{formatMemoWithLinks(todo.memo)}</div>
         )}
       </div>
     </li>
   )
+}
+
+function formatMemoWithLinks(text) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+  const parts = text.split(urlRegex)
+  return parts.map((part, i) => {
+    if (part.match(/^https?:\/\//)) {
+      try {
+        const url = new URL(part)
+        const domain = url.hostname.replace('www.', '')
+        const pathParts = url.pathname.split('/').filter(Boolean)
+        const lastPath = pathParts[pathParts.length - 1] || ''
+        const label = lastPath ? `${domain}/${lastPath}` : domain
+        return React.createElement('a', {
+          key: i,
+          className: 'memo-link',
+          onClick: (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            window.electronAPI?.openExternal(part)
+          }
+        }, label)
+      } catch {
+        return part
+      }
+    }
+    return part
+  })
 }
 
 function TodoList({ todos, setTodos, lang, onOpenSettings }) {
@@ -121,7 +157,7 @@ function TodoList({ todos, setTodos, lang, onOpenSettings }) {
   const [activeTab, setActiveTab] = useState('all')
   const [activePriority, setActivePriority] = useState('all')
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false)
-  const [expandedId, setExpandedId] = useState(null)
+  const [expandedIds, setExpandedIds] = useState(new Set())
   const [manualOrder, setManualOrder] = useState([])
   const dropdownRef = useRef(null)
 
@@ -151,14 +187,14 @@ function TodoList({ todos, setTodos, lang, onOpenSettings }) {
   const handleEdit = (updated) => setTodos(prev => prev.map(t => t.id === updated.id ? updated : t))
 
   const handleToggle = (id) => {
-    setTodos(prev => prev.map(t => {
-      if (t.id !== id) return t
-      const completions = { ...t.completions }
-      if (completions[todayStr]) delete completions[todayStr]
-      else completions[todayStr] = true
-      return { ...t, completions }
-    }))
-  }
+  setTodos(prev => prev.map(t => {
+    if (t.id !== id) return t
+    const completions = { ...t.completions }
+    if (completions[todayStr]) delete completions[todayStr]
+    else completions[todayStr] = true
+    return { ...t, completions }
+  }))
+}
 
   const handleArchive = (id) => {
     const todo = todos.find(t => t.id === id)
@@ -169,7 +205,12 @@ function TodoList({ todos, setTodos, lang, onOpenSettings }) {
     }
   }
 
-  const isTodayCompleted = (todo) => !!(todo.completions?.[todayStr])
+  const isTodayCompleted = (todo) => {
+      if (todo.type === 'date') {
+        return !!(todo.completions && Object.keys(todo.completions).length > 0)
+      }
+      return !!(todo.completions?.[todayStr])
+    }
 
   const isVisibleToday = (todo) => {
     const today = new Date()
@@ -294,8 +335,8 @@ function TodoList({ todos, setTodos, lang, onOpenSettings }) {
                   key={todo.id}
                   todo={todo}
                   done={isTodayCompleted(todo)}
-                  expandedId={expandedId}
-                  setExpandedId={setExpandedId}
+                  expandedIds={expandedIds}
+                  setExpandedIds={setExpandedIds}
                   handleToggle={handleToggle}
                   handleArchive={handleArchive}
                   setEditTodo={setEditTodo}

@@ -112,6 +112,9 @@ export const translations = {
     exportSuccess: 'Backup saved!',
     importSuccess: 'Restoring data...',
     importError: 'Invalid backup file.',
+    filterAll: 'All',
+    filterActive: 'Todo',
+    filterCompleted: 'Done',
     dateLabel: (month, day, dow) => `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month]} ${day}, ${dow}`,
 
   },
@@ -229,6 +232,9 @@ export const translations = {
     exportSuccess: '백업이 저장됐어요!',
     importSuccess: '데이터 복원 중...',
     importError: '올바르지 않은 백업 파일이에요.',
+    filterAll: '전체',
+    filterActive: '미완료',
+    filterCompleted: '완료',
     dateLabel: (month, day, dow) => {
   const dowKr = ['일','월','화','수','목','금','토']
   const dowIndex = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(dow)
