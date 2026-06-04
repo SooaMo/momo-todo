@@ -55,7 +55,51 @@ function formatMemoWithLinks(text) {
   })
 }
 
-function SortableTodoItem({ todo, done, expandedIds, setExpandedIds, handleToggle, handleArchive, setEditTodo, lang, isDragOverlay }) {
+function getUrgencyBorder(todo, todayStr) {
+  const isCompleted = todo.type === 'date'
+    ? !!(todo.completions && Object.keys(todo.completions).length > 0)
+    : !!(todo.completions?.[todayStr])
+  if (isCompleted) return null
+
+  const now = new Date()
+
+  if (todo.type === 'one-time' && todo.dueDate) {
+    const [y, m, d] = todo.dueDate.split('-').map(Number)
+    const due = new Date(y, m-1, d)
+    if (todo.time) {
+      const [h, min] = todo.time.split(':').map(Number)
+      due.setHours(h, min, 0, 0)
+    } else {
+      due.setHours(23, 59, 0, 0)
+    }
+    const diffMins = Math.floor((due - now) / (1000 * 60))
+    if (diffMins <= 0) return { color: 'var(--color-urgency-high)', width: '6px' }
+    if (diffMins <= 60) return { color: 'var(--color-urgency-high)', width: '6px' }
+    if (diffMins <= 60 * 24) return { color: 'var(--color-urgency-mid)', width: '4px' }
+    if (diffMins <= 60 * 24 * 3) return { color: 'var(--color-urgency-low)', width: '3px' }
+  }
+
+  if (todo.type === 'date' && todo.endDate) {
+    const [y, m, d] = todo.endDate.split('-').map(Number)
+    const end = new Date(y, m-1, d)
+    const diffDays = Math.floor((end - now) / (1000 * 60 * 60 * 24))
+    if (diffDays < 0) return { color: 'var(--color-urgency-high)', width: '6px' }
+    if (diffDays === 0) return { color: 'var(--color-urgency-high)', width: '6px' }
+    if (diffDays === 1) return { color: 'var(--color-urgency-mid)', width: '4px' }
+    if (diffDays <= 3) return { color: 'var(--color-urgency-low)', width: '3px' }
+  }
+
+  if (todo.type === 'daily' || todo.type === 'weekly') {
+    const hours = now.getHours()
+    if (hours >= 23) return { color: 'var(--color-urgency-high)', width: '6px' }
+    if (hours >= 21) return { color: 'var(--color-urgency-mid)', width: '4px' }
+  }
+
+
+  return null
+}
+
+function SortableTodoItem({ todo, done, expandedIds, setExpandedIds, handleToggle, handleArchive, setEditTodo, lang, isDragOverlay, todayStr }) {
   const t = getT(lang)
   const {
     attributes,
@@ -72,8 +116,18 @@ function SortableTodoItem({ todo, done, expandedIds, setExpandedIds, handleToggl
     opacity: isDragging ? 0.3 : 1,
   }
 
+  const urgency = !done ? getUrgencyBorder(todo, todayStr) : null
+
   return (
-    <li ref={setNodeRef} style={isDragOverlay ? {} : style} className={`todo-item ${done ? 'completed' : ''}`}>
+    <li
+      ref={setNodeRef}
+      style={isDragOverlay ? {} : {
+        ...style,
+        borderTop: urgency ? `2px solid ${urgency.color}` : undefined,
+   
+      }}
+      className={`todo-item ${done ? 'completed' : ''}`}
+    >
       <button className="todo-drag-handle" {...attributes} {...listeners} tabIndex={-1}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/>
@@ -279,6 +333,7 @@ function FolderSection({ folder, todos, todayStr, activeTab, activePriority, exp
                       handleArchive={handleArchive}
                       setEditTodo={setEditTodo}
                       lang={lang}
+                      todayStr={todayStr}
                     />
                   ))}
                 </ul>
@@ -299,8 +354,18 @@ function TodoList({ todos, setTodos, folders, setFolders, lang, onOpenSettings }
   const [activeTab, setActiveTab] = useState('all')
   const [activePriority, setActivePriority] = useState('all')
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false)
-  const [expandedIds, setExpandedIds] = useState(new Set())
-  const [openFolders, setOpenFolders] = useState(() => new Set(['default']))
+  const [expandedIds, setExpandedIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('momo-expanded-ids')
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch { return new Set() }
+  })
+  const [openFolders, setOpenFolders] = useState(() => {
+    try {
+      const saved = localStorage.getItem('momo-open-folders')
+      return saved ? new Set(JSON.parse(saved)) : new Set(['default'])
+    } catch { return new Set(['default']) }
+  })
   const [showAddFolder, setShowAddFolder] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [activeDragId, setActiveDragId] = useState(null)
@@ -319,6 +384,14 @@ function TodoList({ todos, setTodos, folders, setFolders, lang, onOpenSettings }
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 5 },
   }))
+
+  useEffect(() => {
+    localStorage.setItem('momo-open-folders', JSON.stringify([...openFolders]))
+  }, [openFolders])
+
+  useEffect(() => {
+    localStorage.setItem('momo-expanded-ids', JSON.stringify([...expandedIds]))
+  }, [expandedIds])
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -358,7 +431,6 @@ function TodoList({ todos, setTodos, folders, setFolders, lang, onOpenSettings }
   const handleDragOver = (event) => {
     const { over } = event
     if (!over) { setOverFolderId(null); return }
-    // 폴더 드롭존 위에 있는지 확인
     if (over.data.current?.type === 'folder') {
       setOverFolderId(over.data.current.folderId)
     } else if (over.data.current?.type === 'todo') {
@@ -387,14 +459,11 @@ function TodoList({ todos, setTodos, folders, setFolders, lang, onOpenSettings }
     if (!targetFolderId) return
 
     if (activeTodo.folderId !== targetFolderId) {
-      // 다른 폴더로 이동
       setTodos(prev => prev.map(t =>
         t.id === active.id ? { ...t, folderId: targetFolderId } : t
       ))
-      // 이동한 폴더 열기
       setOpenFolders(prev => new Set([...prev, targetFolderId]))
     } else {
-      // 같은 폴더 내 정렬
       const folderTodos = todos.filter(t => t.folderId === activeTodo.folderId)
       const oldIndex = folderTodos.findIndex(t => t.id === active.id)
       const newIndex = folderTodos.findIndex(t => t.id === over.id)
@@ -538,13 +607,13 @@ function TodoList({ todos, setTodos, folders, setFolders, lang, onOpenSettings }
                 setEditTodo={() => {}}
                 lang={lang}
                 isDragOverlay
+                todayStr={todayStr}
               />
             </ul>
           ) : null}
         </DragOverlay>
       </DndContext>
 
-      {/* Add folder */}
       <div className="folder-add-row">
         {showAddFolder ? (
           <div className="folder-add-input-row">
@@ -594,7 +663,7 @@ function TodoList({ todos, setTodos, folders, setFolders, lang, onOpenSettings }
           defaultType={activeTab === 'all' ? 'daily' : activeTab}
         />
       )}
-      
+
       {editTodo && (
         <AddTodoModal
           onClose={() => setEditTodo(null)}

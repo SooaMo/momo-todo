@@ -27,6 +27,10 @@ const THEMES = {
     '--topbar-bg': '#8ecfbe',
     '--title-grad-start': '#5aab94',
     '--title-grad-end': '#e08888',
+
+    '--color-urgency-low': '#f0b429',  
+    '--color-urgency-mid': '#e07a30',   
+    '--color-urgency-high': '#e03030',  
   },
   peach: {
     '--color-primary': '#e8a87c',
@@ -39,6 +43,9 @@ const THEMES = {
     '--topbar-bg': '#e8a87c',
     '--title-grad-start': '#c07840',
     '--title-grad-end': '#9b8ec4',
+        '--color-urgency-low': '#f0b429',  
+    '--color-urgency-mid': '#e07a30',   
+    '--color-urgency-high': '#e03030',
   },
   rose: {
     '--color-primary': '#d4849a',
@@ -51,6 +58,9 @@ const THEMES = {
     '--topbar-bg': '#d4849a',
     '--title-grad-start': '#b05870',
     '--title-grad-end': '#7ba7bc',
+        '--color-urgency-low': '#f0b429',  
+    '--color-urgency-mid': '#e07a30',   
+    '--color-urgency-high': '#e03030',
   },
   ocean: {
     '--color-primary': '#7ba7bc',
@@ -63,6 +73,9 @@ const THEMES = {
     '--topbar-bg': '#7ba7bc',
     '--title-grad-start': '#4a7a8a',
     '--title-grad-end': '#e07b6a',
+        '--color-urgency-low': '#f0b429',  
+    '--color-urgency-mid': '#e07a30',   
+    '--color-urgency-high': '#e03030',
   },
   lavender: {
     '--color-primary': '#9b8ec4',
@@ -75,6 +88,9 @@ const THEMES = {
     '--topbar-bg': '#9b8ec4',
     '--title-grad-start': '#6a5a9a',
     '--title-grad-end': '#e8a87c',
+        '--color-urgency-low': '#f0b429',  
+    '--color-urgency-mid': '#e07a30',   
+    '--color-urgency-high': '#e03030',
   },
   dark: {
     '--color-primary': '#4a9e8a',
@@ -87,6 +103,9 @@ const THEMES = {
     '--topbar-bg': '#1a2028',
     '--title-grad-start': '#4ac4a4',
     '--title-grad-end': '#e07a7a',
+        '--color-urgency-low': '#f0b429',  
+    '--color-urgency-mid': '#e07a30',   
+    '--color-urgency-high': '#e03030',
   },
 }
 
@@ -236,9 +255,10 @@ function App() {
               folders={folders}
             />
           )}
+           <StickerLayer pageKey={pageKey} stickerMode={stickerMode} />
         </main>
 
-        <StickerLayer pageKey={pageKey} stickerMode={stickerMode} />
+       
 
         {stickerPanelOpen && (
           <StickerPanel
