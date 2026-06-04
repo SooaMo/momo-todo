@@ -8,6 +8,8 @@ import SettingsModal from './components/SettingsModal'
 import StickerLayer from './components/StickerLayer'
 import StickerPanel from './components/StickerPanel'
 import StartupModal from './components/StartupModal'
+import { useAlarmChecker } from './components/AlarmPopup'
+
 
 const STORAGE_KEY = 'momo-todos'
 const THEME_KEY = 'momo-theme'
@@ -141,6 +143,8 @@ function App() {
   const [showStartupPrompt, setShowStartupPrompt] = useState(false)
   const [hasUpdate, setHasUpdate] = useState(false)
 
+  useAlarmChecker(todos, lang)
+
   // 기존 todo에 folderId 없으면 default 폴더로 마이그레이션
   useEffect(() => {
     setTodos(prev => {
@@ -270,6 +274,7 @@ function App() {
       {showStartupPrompt && (
         <StartupModal onClose={() => setShowStartupPrompt(false)} lang={lang} />
       )}
+
     </div>
   )
 }

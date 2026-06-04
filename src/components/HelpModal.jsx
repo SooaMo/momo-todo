@@ -192,6 +192,58 @@ function HelpModal({ onClose, lang }) {
             </div>
           </div>
 
+          <div className="help-divider" />
+
+          {/* Folders */}
+          <div className="help-section">
+            <div className="help-icon-row">
+              <span className="help-icon" style={{ background: 'var(--color-secondary)' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+              </span>
+              <div>
+                <p className="help-section-title">{t.helpFolderTitle}</p>
+                <p className="help-section-desc">{t.helpFolderDesc}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="help-divider" />
+
+          {/* Alarms */}
+          <div className="help-section">
+            <div className="help-icon-row">
+              <span className="help-icon" style={{ background: 'var(--color-secondary)' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+              </span>
+              <div>
+                <p className="help-section-title">{t.helpAlarmTitle}</p>
+                <p className="help-section-desc">{t.helpAlarmDesc}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="help-divider" />
+
+          {/* Calendar Filter */}
+          <div className="help-section">
+            <div className="help-icon-row">
+              <span className="help-icon" style={{ background: 'var(--color-secondary)' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                </svg>
+              </span>
+              <div>
+                <p className="help-section-title">{t.helpCalendarFilterTitle}</p>
+                <p className="help-section-desc">{t.helpCalendarFilterDesc}</p>
+              </div>
+            </div>
+          </div>
+
         </div>
         <div className="modal-footer" style={{ justifyContent: 'center' }}>
           <button className="btn-submit" onClick={onClose}>{t.gotIt}</button>

@@ -1,7 +1,8 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, shell, Notification } = require('electron')
 const path = require('path')
 const Store = require('electron-store')
 const https = require('https')
+const { autoUpdater } = require('electron-updater')
 
 const store = new Store()
 
@@ -138,6 +139,19 @@ app.whenReady().then(() => {
   createWindow()
   createTray()
 
+      // 알람 체커 - 1분마다
+    if (app.isPackaged) {
+      setInterval(() => {
+        checkAlarms()
+      }, 60000)
+    }
+
+    function checkAlarms() {
+      const win = mainWindow
+      if (!win) return
+      win.webContents.send('check-alarms', { time: new Date().toISOString() })
+    }
+
   mainWindow.webContents.once('did-finish-load', () => {
     if (!store.get('startupPromptShown')) {
       mainWindow.webContents.send('show-startup-prompt', app.getLoginItemSettings().openAtLogin)
@@ -202,4 +216,15 @@ ipcMain.handle('open-external', async (event, url) => {
   return true
 })
 
+ipcMain.handle('show-notification', (event, { title, body }) => {
+  if (Notification.isSupported()) {
+    new Notification({
+      title,
+      body,
+      icon: app.isPackaged ? path.join(process.resourcesPath, 'icon.ico') : path.join(__dirname, 'build', 'icon.ico'),
+    }).show()
+  }
+})
+
 ipcMain.handle('get-app-version', () => app.getVersion())
+

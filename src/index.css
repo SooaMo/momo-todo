@@ -243,6 +243,10 @@ body {
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--color-text);
+  word-break: break-word;
+  white-space: normal;
+  flex: 1;
+  min-width: 0;
 }
 
 .todo-title-row {
@@ -1894,3 +1898,210 @@ body {
   transform: scale(1.08);
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
 }
+.alarm-popup {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 16rem;
+  background: var(--color-white);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  border: 1px solid var(--color-secondary);
+  z-index: 9999;
+  overflow: hidden;
+  animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.alarm-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-primary);
+  color: white;
+}
+
+.alarm-popup-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.alarm-dismiss-all {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: white;
+  display: flex;
+  align-items: center;
+  opacity: 0.8;
+  padding: 0.2rem;
+  border-radius: 0.2rem;
+}
+
+.alarm-dismiss-all:hover { opacity: 1; background: rgba(255,255,255,0.2); }
+
+.alarm-popup-list {
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.alarm-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--color-secondary);
+  gap: 0.5rem;
+}
+
+.alarm-item:last-child { border-bottom: none; }
+
+.alarm-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.alarm-item-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alarm-item-msg {
+  font-size: 0.72rem;
+  color: var(--color-text-light);
+}
+
+.alarm-item-dismiss {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-light);
+  display: flex;
+  align-items: center;
+  padding: 0.2rem;
+  border-radius: 0.2rem;
+  flex-shrink: 0;
+}
+
+.alarm-item-dismiss:hover { color: var(--color-text); background: var(--color-secondary); }
+/* Alarm */
+.alarm-section {
+  margin-bottom: 0.75rem;
+}
+
+.alarm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.alarm-toggle-btn {
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+  border: none;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.alarm-toggle-btn.on {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.alarm-toggle-btn.off {
+  background-color: var(--color-secondary);
+  color: var(--color-text-light);
+}
+
+.alarm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.4rem;
+  background: var(--color-secondary);
+  border-radius: 0.375rem;
+}
+
+.alarm-item-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--color-white);
+  border-radius: 0.3rem;
+  padding: 0.3rem 0.5rem;
+}
+
+.alarm-date-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.alarm-time-input {
+  flex: 1;
+  border: none;
+  background: none;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 0.82rem;
+  color: var(--color-text);
+  outline: none;
+}
+
+.alarm-select {
+  flex: 1;
+  border: none;
+  background: none;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 0.82rem;
+  color: var(--color-text);
+  outline: none;
+  cursor: pointer;
+}
+
+.alarm-remove-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-light);
+  display: flex;
+  align-items: center;
+  padding: 0.2rem;
+  border-radius: 0.2rem;
+  flex-shrink: 0;
+}
+
+.alarm-remove-btn:hover { color: var(--color-accent); }
+
+.alarm-add-btn {
+  background: none;
+  border: 1px dashed var(--color-primary);
+  border-radius: 0.3rem;
+  padding: 0.3rem;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 0.78rem;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.alarm-add-btn:hover { background: rgba(0,0,0,0.03); }
+
