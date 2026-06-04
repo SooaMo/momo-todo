@@ -11,20 +11,21 @@ import StartupModal from './components/StartupModal'
 
 const STORAGE_KEY = 'momo-todos'
 const THEME_KEY = 'momo-theme'
+const FOLDERS_KEY = 'momo-folders'
 
 const THEMES = {
   mint: {
-  '--color-primary': '#8ecfbe',
-  '--color-secondary': '#e8f7f3',
-  '--color-accent': '#f4a8a0',
-  '--color-bg': '#f5fbf9',
-  '--color-white': '#ffffff',
-  '--color-text': '#2d3d38',
-  '--color-text-light': '#5a8a78',
-  '--topbar-bg': '#8ecfbe',
-  '--title-grad-start': '#5aab94',
-  '--title-grad-end': '#e08888',
-},
+    '--color-primary': '#8ecfbe',
+    '--color-secondary': '#e8f7f3',
+    '--color-accent': '#f4a8a0',
+    '--color-bg': '#f5fbf9',
+    '--color-white': '#ffffff',
+    '--color-text': '#2d3d38',
+    '--color-text-light': '#5a8a78',
+    '--topbar-bg': '#8ecfbe',
+    '--title-grad-start': '#5aab94',
+    '--title-grad-end': '#e08888',
+  },
   peach: {
     '--color-primary': '#e8a87c',
     '--color-secondary': '#fdf0e8',
@@ -90,6 +91,7 @@ const THEMES = {
 function applyTheme(theme) {
   const root = document.documentElement
   const vars = THEMES[theme]
+  if (!vars) return
   Object.entries(vars).forEach(([key, val]) => {
     root.style.setProperty(key, val)
   })
@@ -106,22 +108,49 @@ function saveTodos(todos) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(todos))
 }
 
+function loadFolders() {
+  try {
+    const saved = localStorage.getItem(FOLDERS_KEY)
+    return saved ? JSON.parse(saved) : [
+      { id: 'default', name: 'Todo!', order: 0, isDefault: true }
+    ]
+  } catch {
+    return [{ id: 'default', name: 'Todo!', order: 0, isDefault: true }]
+  }
+}
+
+function saveFolders(folders) {
+  localStorage.setItem(FOLDERS_KEY, JSON.stringify(folders))
+}
+
 function App() {
   const [alwaysOnTop, setAlwaysOnTop] = useState(false)
   const [showArchive, setShowArchive] = useState(false)
   const [todos, setTodos] = useState(loadTodos)
+  const [folders, setFolders] = useState(loadFolders)
   const [mainView, setMainView] = useState('todo')
   const [calView, setCalView] = useState('month')
   const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'mint')
   const [lang, setLang] = useState(() => localStorage.getItem('momo-lang') || 'en')
   const [showHelp, setShowHelp] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [settingsTab, setSettingsTab] = useState('graphic')
   const [stickerPanelOpen, setStickerPanelOpen] = useState(false)
   const [stickerMode, setStickerMode] = useState(false)
   const [savedWidth, setSavedWidth] = useState(null)
   const [showStartupPrompt, setShowStartupPrompt] = useState(false)
   const [hasUpdate, setHasUpdate] = useState(false)
-  const [settingsTab, setSettingsTab] = useState('graphic')
+
+  // 기존 todo에 folderId 없으면 default 폴더로 마이그레이션
+  useEffect(() => {
+    setTodos(prev => {
+      const needsMigration = prev.some(todo => todo.folderId === undefined)
+      if (!needsMigration) return prev
+      return prev.map(todo =>
+        todo.folderId === undefined ? { ...todo, folderId: 'default' } : todo
+      )
+    })
+  }, [])
 
   useEffect(() => {
     applyTheme(theme)
@@ -131,6 +160,10 @@ function App() {
   useEffect(() => {
     saveTodos(todos)
   }, [todos])
+
+  useEffect(() => {
+    saveFolders(folders)
+  }, [folders])
 
   useEffect(() => {
     localStorage.setItem('momo-lang', lang)
@@ -184,6 +217,8 @@ function App() {
             <TodoList
               todos={todos}
               setTodos={setTodos}
+              folders={folders}
+              setFolders={setFolders}
               lang={lang}
               onOpenSettings={() => { setSettingsTab('graphic'); setShowSettings(true) }}
             />
@@ -222,7 +257,7 @@ function App() {
       {showSettings && (
         <SettingsModal
           onClose={() => {
-            applyTheme(theme) // 닫을때 원래 테마로 복원
+            applyTheme(theme)
             setShowSettings(false)
           }}
           lang={lang}

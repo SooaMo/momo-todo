@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { getT } from '../i18n'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-function AddTodoModal({ onClose, onAdd, initialData, lang }) {
+function AddTodoModal({ onClose, onAdd, initialData, lang, folders, defaultFolderId, allTodos }) {
   const t = getT(lang)
   const isEdit = !!initialData
   const [title, setTitle] = useState(initialData?.title || '')
@@ -17,12 +17,48 @@ function AddTodoModal({ onClose, onAdd, initialData, lang }) {
   const [labelText, setLabelText] = useState(initialData?.label?.text || '')
   const [labelColor, setLabelColor] = useState(initialData?.label?.color || '#DC9B9B')
   const [memo, setMemo] = useState(initialData?.memo || '')
+  const [folderId, setFolderId] = useState(initialData?.folderId || defaultFolderId || 'default')
+  const [showFolderDropdown, setShowFolderDropdown] = useState(false)
+  const [showLabelDropdown, setShowLabelDropdown] = useState(false)
+  const [labelMode, setLabelMode] = useState(initialData?.label ? 'existing' : 'none')
+  const folderDropdownRef = useRef(null)
+  const labelDropdownRef = useRef(null)
+
+  // 기존 라벨 목록 추출
+  const existingLabels = (() => {
+    if (!allTodos) return []
+    const labelMap = {}
+    allTodos.forEach(todo => {
+      if (todo.label?.text) {
+        labelMap[todo.label.text] = todo.label
+      }
+    })
+    return Object.values(labelMap)
+  })()
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (folderDropdownRef.current && !folderDropdownRef.current.contains(e.target)) {
+        setShowFolderDropdown(false)
+      }
+      if (labelDropdownRef.current && !labelDropdownRef.current.contains(e.target)) {
+        setShowLabelDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const toggleDay = (day) => {
     setSelectedDays(prev =>
       prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
     )
   }
+
+  const selectedFolder = folders?.find(f => f.id === folderId)
+  const labelDisplay = labelMode === 'none' ? 'None'
+    : labelMode === 'new' ? (labelText || 'New label...')
+    : labelText || 'None'
 
   const handleSubmit = () => {
     if (!title.trim()) return
@@ -36,11 +72,12 @@ function AddTodoModal({ onClose, onAdd, initialData, lang }) {
       startDate: type === 'date' ? startDate : null,
       endDate: type === 'date' ? endDate : null,
       selectedDays: type === 'weekly' ? selectedDays : [],
-      label: labelText ? { text: labelText, color: labelColor } : null,
+      label: labelMode !== 'none' && labelText ? { text: labelText, color: labelColor } : null,
       memo: memo || null,
       completed: initialData?.completed || false,
       completions: initialData?.completions || {},
       createdAt: initialData?.createdAt || new Date().toISOString(),
+      folderId: folderId || 'default',
     }
     onAdd(todo)
     onClose()
@@ -60,6 +97,7 @@ function AddTodoModal({ onClose, onAdd, initialData, lang }) {
         </div>
 
         <div className="modal-body">
+          {/* Title */}
           <div className="form-group">
             <label className="form-label">{t.titleLabel}</label>
             <input
@@ -71,6 +109,43 @@ function AddTodoModal({ onClose, onAdd, initialData, lang }) {
             />
           </div>
 
+          {/* Folder dropdown */}
+          {folders && folders.length > 0 && (
+            <div className="form-group">
+              <label className="form-label">{lang === 'kr' ? '폴더' : 'Folder'}</label>
+              <div className="todo-dropdown-wrap" ref={folderDropdownRef}>
+                <button
+                  className="todo-dropdown-btn"
+                  onClick={() => setShowFolderDropdown(prev => !prev)}
+                >
+                  <span>{selectedFolder?.name || 'Todo!'}</span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+                {showFolderDropdown && (
+                  <div className="todo-dropdown-list">
+                    {folders.map(f => (
+                      <button
+                        key={f.id}
+                        className={`todo-dropdown-item ${folderId === f.id ? 'active' : ''}`}
+                        onClick={() => { setFolderId(f.id); setShowFolderDropdown(false) }}
+                      >
+                        {folderId === f.id && (
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        )}
+                        {f.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Type */}
           <div className="form-group">
             <label className="form-label">{t.typeLabel}</label>
             <div className="btn-group">
@@ -80,13 +155,18 @@ function AddTodoModal({ onClose, onAdd, initialData, lang }) {
                 { id: 'date', label: t.tabDate },
                 { id: 'one-time', label: t.tabOneTime },
               ].map(tp => (
-                <button key={tp.id} className={`btn-option ${type === tp.id ? 'active' : ''}`} onClick={() => setType(tp.id)}>
+                <button
+                  key={tp.id}
+                  className={`btn-option ${type === tp.id ? 'active' : ''}`}
+                  onClick={() => setType(tp.id)}
+                >
                   {tp.label}
                 </button>
               ))}
             </div>
           </div>
 
+          {/* Days (weekly) */}
           {type === 'weekly' && (
             <div className="form-group">
               <label className="form-label">{t.daysLabel}</label>
@@ -104,6 +184,7 @@ function AddTodoModal({ onClose, onAdd, initialData, lang }) {
             </div>
           )}
 
+          {/* Date range */}
           {type === 'date' && (
             <div className="form-group">
               <label className="form-label">{t.dateRangeLabel}</label>
@@ -115,6 +196,7 @@ function AddTodoModal({ onClose, onAdd, initialData, lang }) {
             </div>
           )}
 
+          {/* Due date (one-time) */}
           {type === 'one-time' && (
             <div className="form-group">
               <label className="form-label">{t.dueDateLabel}</label>
@@ -122,6 +204,7 @@ function AddTodoModal({ onClose, onAdd, initialData, lang }) {
             </div>
           )}
 
+          {/* Priority */}
           <div className="form-group">
             <label className="form-label">{t.priorityLabel}</label>
             <div className="btn-group">
@@ -141,30 +224,109 @@ function AddTodoModal({ onClose, onAdd, initialData, lang }) {
             </div>
           </div>
 
+          {/* Time */}
           <div className="form-group">
             <label className="form-label">{t.timeLabel}</label>
             <input className="form-input" type="time" value={time} onChange={e => setTime(e.target.value)} />
           </div>
 
+          {/* Label dropdown */}
           <div className="form-group">
             <label className="form-label">{t.labelLabel}</label>
-            <div className="label-input-group">
-              <input
-                className="form-input"
-                type="text"
-                placeholder={t.labelPlaceholder}
-                value={labelText}
-                onChange={e => setLabelText(e.target.value)}
-              />
-              <input
-                className="color-picker"
-                type="color"
-                value={labelColor}
-                onChange={e => setLabelColor(e.target.value)}
-              />
+            <div className="todo-dropdown-wrap" ref={labelDropdownRef}>
+              <button
+                className="todo-dropdown-btn"
+                onClick={() => setShowLabelDropdown(prev => !prev)}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  {labelMode !== 'none' && labelText && (
+                    <span style={{ width: '0.7rem', height: '0.7rem', borderRadius: '50%', backgroundColor: labelColor, display: 'inline-block' }} />
+                  )}
+                  {labelDisplay}
+                </span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+              {showLabelDropdown && (
+                <div className="todo-dropdown-list">
+                  {/* None */}
+                  <button
+                    className={`todo-dropdown-item ${labelMode === 'none' ? 'active' : ''}`}
+                    onClick={() => { setLabelMode('none'); setLabelText(''); setShowLabelDropdown(false) }}
+                  >
+                    {labelMode === 'none' && (
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    )}
+                    None
+                  </button>
+
+                  {/* 기존 라벨들 */}
+                  {existingLabels.map(label => (
+                    <button
+                      key={label.text}
+                      className={`todo-dropdown-item ${labelMode === 'existing' && labelText === label.text ? 'active' : ''}`}
+                      onClick={() => {
+                        setLabelMode('existing')
+                        setLabelText(label.text)
+                        setLabelColor(label.color)
+                        setShowLabelDropdown(false)
+                      }}
+                    >
+                      {labelMode === 'existing' && labelText === label.text && (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      )}
+                      <span style={{ width: '0.7rem', height: '0.7rem', borderRadius: '50%', backgroundColor: label.color, display: 'inline-block', flexShrink: 0 }} />
+                      {label.text}
+                    </button>
+                  ))}
+
+                  {/* New label */}
+                  <button
+                    className={`todo-dropdown-item ${labelMode === 'new' ? 'active' : ''}`}
+                    onClick={() => { setLabelMode('new'); setLabelText(''); setShowLabelDropdown(false) }}
+                  >
+                    {labelMode === 'new' && (
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    )}
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    {lang === 'kr' ? '새 라벨' : 'New label'}
+                  </button>
+                </div>
+              )}
             </div>
+
+            {/* New label input */}
+            {labelMode === 'new' && (
+              <div className="label-input-group" style={{ marginTop: '0.4rem' }}>
+                <input
+                  className="form-input"
+                  type="text"
+                  placeholder={t.labelPlaceholder}
+                  value={labelText}
+                  onChange={e => setLabelText(e.target.value)}
+                  autoFocus
+                />
+                <input
+                  className="color-picker"
+                  type="color"
+                  value={labelColor}
+                  onChange={e => setLabelColor(e.target.value)}
+                />
+              </div>
+            )}
           </div>
 
+          {/* Memo */}
           <div className="form-group">
             <label className="form-label">{t.memoLabel}</label>
             <textarea
