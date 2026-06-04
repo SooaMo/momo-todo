@@ -110,12 +110,20 @@ body {
 }
 
 .pin-btn.pin-active {
-  background-color: #5a8f7b;
-  color: white;
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .pin-btn.pin-active svg {
-  stroke: white;
+  stroke: rgb(192, 22, 22);
+}
+
+.sticker-btn.pin-active {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+
+.sticker-btn.pin-active svg{
+  stroke: rgb(33, 22, 192);
 }
 
 /* View tabs (Today/Calendar switch) */

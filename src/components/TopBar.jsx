@@ -23,15 +23,15 @@ function TopBar({ alwaysOnTop, onToggleAlwaysOnTop, onOpenArchive, mainView, set
       <div className="topbar-controls">
         {/* Sticker panel toggle */}
         <button
-          className={`topbar-btn ${stickerPanelOpen ? 'pin-active' : ''}`}
+          className={`topbar-btn sticker-btn ${stickerPanelOpen ? 'pin-active' : ''}`}
           onClick={onToggleStickerPanel}
           title="Stickers"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-  <path d="M3 5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-  <path d="M16 3v5h5"/>
-  <path d="M12 10c-1.5-1.5-4 0-4 2s2 3 4 5c2-2 4-3 4-5s-2.5-3.5-4-2z"/>
-</svg>
+          <path d="M3 5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <path d="M16 3v5h5"/>
+          <path d="M12 10c-1.5-1.5-4 0-4 2s2 3 4 5c2-2 4-3 4-5s-2.5-3.5-4-2z"/>
+        </svg>
         </button>
 
         {/* Pin */}
