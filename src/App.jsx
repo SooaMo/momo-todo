@@ -223,7 +223,10 @@ function App() {
     <div className={`app-container ${theme === 'dark' ? 'dark-theme' : ''}`}>
       <TopBar
         alwaysOnTop={alwaysOnTop}
-        onToggleAlwaysOnTop={() => setAlwaysOnTop(prev => !prev)}
+        onToggleAlwaysOnTop={async () => {
+          const result = await window.electronAPI?.toggleAlwaysOnTop()
+          if (result !== undefined) setAlwaysOnTop(result)
+        }}
         onOpenArchive={() => setShowArchive(true)}
         mainView={mainView}
         setMainView={setMainView}

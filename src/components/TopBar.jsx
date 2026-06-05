@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from 'react'
 function TopBar({ alwaysOnTop, onToggleAlwaysOnTop, onOpenArchive, mainView, setMainView, onOpenSettings, stickerPanelOpen, onToggleStickerPanel, hasUpdate }) {
 
   const handleAlwaysOnTop = () => {
-    window.electronAPI?.toggleAlwaysOnTop()
     onToggleAlwaysOnTop()
   }
 
