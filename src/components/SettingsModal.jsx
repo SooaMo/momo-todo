@@ -23,12 +23,14 @@ const BG_COLORS = [
   { label: 'Accent', value: 'var(--color-accent)' },
 ]
 const THEMES = [
-  { id: 'mint', label: 'Mint', color: '#7ec8b0' },
-  { id: 'peach', label: 'Peach', color: '#e8a87c' },
-  { id: 'rose', label: 'Rose', color: '#d4849a' },
-  { id: 'ocean', label: 'Ocean', color: '#7ba7bc' },
+  { id: 'mint',     label: 'Mint',     color: '#7ec8b0' },
+  { id: 'peach',    label: 'Peach',    color: '#e8a87c' },
+  { id: 'rose',     label: 'Rose',     color: '#d4849a' },
+  { id: 'ocean',    label: 'Ocean',    color: '#7ba7bc' },
   { id: 'lavender', label: 'Lavender', color: '#9b8ec4' },
-  { id: 'dark', label: 'Dark', color: '#2a3442' },
+  { id: 'ivory',    label: 'Ivory',    color: '#a89880' },
+  { id: 'sky',      label: 'Sky',      color: '#8ec4e0' },
+  { id: 'dark',     label: 'Dark',     color: '#2a3442' },
 ]
 
 function BannerSetting({ imageKey, label, settings, onSettingsChange, lang }) {

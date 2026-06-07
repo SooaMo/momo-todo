@@ -1,7 +1,7 @@
 {
   "name": "momo-todo",
   "private": true,
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "electron.cjs",
   "scripts": {
     "dev": "vite",
@@ -32,7 +32,8 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "build/icon.ico"
+      "icon": "build/icon.ico",
+      "artifactName": "${productName}-${version}-windows-setup.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -46,7 +47,6 @@
       "owner": "SooaMo",
       "repo": "momo-todo"
     }
-    
   },
   "dependencies": {
     "@dnd-kit/core": "^6.0.0",

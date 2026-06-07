@@ -205,7 +205,7 @@ function StickerLayer({ pageKey, stickerMode }) {
               <>
                 {/* Delete button - top left */}
                 <button
-                  className="sticker-delete-btn"
+                  className="sticker-handle sticker-delete-btn"
                   onClick={e => { e.stopPropagation(); handleDelete(sticker.id) }}
                   title="Delete"
                 >
@@ -217,7 +217,7 @@ function StickerLayer({ pageKey, stickerMode }) {
 
                 {/* Rotate handle - top right */}
                 <div
-                  className="sticker-rotate-handle"
+                  className="sticker-handle sticker-rotate-handle"
                   onMouseDown={e => handleRotateStart(e, sticker)}
                   title="Rotate"
                 >
@@ -229,7 +229,7 @@ function StickerLayer({ pageKey, stickerMode }) {
 
                 {/* Resize handle - bottom right */}
                 <div
-                  className="sticker-resize-handle"
+                  className="sticker-handle sticker-resize-handle"
                   onMouseDown={e => handleResizeStart(e, sticker)}
                   title="Resize"
                 >

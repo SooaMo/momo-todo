@@ -73,20 +73,20 @@ function getUrgencyBorder(todo, todayStr) {
       due.setHours(23, 59, 0, 0)
     }
     const diffMins = Math.floor((due - now) / (1000 * 60))
-    if (diffMins <= 0) return { color: 'var(--color-urgency-high)', width: '6px' }
-    if (diffMins <= 60) return { color: 'var(--color-urgency-high)', width: '6px' }
-    if (diffMins <= 60 * 24) return { color: 'var(--color-urgency-mid)', width: '4px' }
-    if (diffMins <= 60 * 24 * 3) return { color: 'var(--color-urgency-low)', width: '3px' }
+    if (diffMins <= 0)         return { color: 'var(--color-urgency-high)', width: '6px', bg: 'var(--color-urgency-bg-high)', badge: 'D-day' }
+if (diffMins <= 60)        return { color: 'var(--color-urgency-high)', width: '6px', bg: 'var(--color-urgency-bg-high)', badge: 'D-day' }
+if (diffMins <= 60 * 24)   return { color: 'var(--color-urgency-mid)',  width: '4px', bg: 'var(--color-urgency-bg-mid)',  badge: 'D-1' }
+if (diffMins <= 60 * 24 * 3) return { color: 'var(--color-urgency-low)', width: '3px', bg: 'var(--color-urgency-bg-low)', badge: `D-${Math.ceil(diffMins / (60 * 24))}` }
   }
 
   if (todo.type === 'date' && todo.endDate) {
     const [y, m, d] = todo.endDate.split('-').map(Number)
     const end = new Date(y, m-1, d)
     const diffDays = Math.floor((end - now) / (1000 * 60 * 60 * 24))
-    if (diffDays < 0) return { color: 'var(--color-urgency-high)', width: '6px' }
-    if (diffDays === 0) return { color: 'var(--color-urgency-high)', width: '6px' }
-    if (diffDays === 1) return { color: 'var(--color-urgency-mid)', width: '4px' }
-    if (diffDays <= 3) return { color: 'var(--color-urgency-low)', width: '3px' }
+    if (diffDays < 0)  return { color: 'var(--color-urgency-high)', width: '6px', bg: 'var(--color-urgency-bg-high)', badge: '지남' }
+if (diffDays === 0) return { color: 'var(--color-urgency-high)', width: '6px', bg: 'var(--color-urgency-bg-high)', badge: 'D-day' }
+if (diffDays === 1) return { color: 'var(--color-urgency-mid)',  width: '4px', bg: 'var(--color-urgency-bg-mid)',  badge: 'D-1' }
+if (diffDays <= 3)  return { color: 'var(--color-urgency-low)', width: '3px', bg: 'var(--color-urgency-bg-low)', badge: `D-${diffDays}` }
   }
 
   if (todo.type === 'daily' || todo.type === 'weekly') {
@@ -99,8 +99,29 @@ function getUrgencyBorder(todo, todayStr) {
   return null
 }
 
-function SortableTodoItem({ todo, done, expandedIds, setExpandedIds, handleToggle, handleArchive, setEditTodo, lang, isDragOverlay, todayStr }) {
+function SortableTodoItem({ todo, done, expandedIds, setExpandedIds, handleToggle, handleArchive, setEditTodo, setTodos, lang, isDragOverlay, todayStr }) {
   const t = getT(lang)
+  const [editingMemo, setEditingMemo] = useState(false)
+  const [memoValue, setMemoValue] = useState(todo.memo || '')
+  const memoRef = useRef(null)
+
+  useEffect(() => {
+    if (editingMemo && memoRef.current) {
+      memoRef.current.focus()
+      memoRef.current.select()
+    }
+  }, [editingMemo])
+
+  const saveMemo = () => {
+    setTodos(prev => prev.map(t => t.id === todo.id ? { ...t, memo: memoValue } : t))
+    setEditingMemo(false)
+  }
+
+  const cancelMemo = () => {
+    setMemoValue(todo.memo || '')
+    setEditingMemo(false)
+  }
+
   const {
     attributes,
     listeners,
@@ -116,18 +137,18 @@ function SortableTodoItem({ todo, done, expandedIds, setExpandedIds, handleToggl
     opacity: isDragging ? 0.3 : 1,
   }
 
-  const urgency = !done ? getUrgencyBorder(todo, todayStr) : null
+ const urgency = !done ? getUrgencyBorder(todo, todayStr) : null
 
-  return (
-    <li
-      ref={setNodeRef}
-      style={isDragOverlay ? {} : {
-        ...style,
-        borderTop: urgency ? `2px solid ${urgency.color}` : undefined,
-   
-      }}
-      className={`todo-item ${done ? 'completed' : ''}`}
-    >
+return (
+  <li
+    ref={setNodeRef}
+    style={isDragOverlay ? {} : {
+      ...style,
+      borderTop: urgency ? `2px solid ${urgency.color}` : undefined,
+      backgroundColor: urgency?.bg || undefined,
+    }}
+    className={`todo-item ${done ? 'completed' : ''}`}
+  >
       <button className="todo-drag-handle" {...attributes} {...listeners} tabIndex={-1}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/>
@@ -150,6 +171,19 @@ function SortableTodoItem({ todo, done, expandedIds, setExpandedIds, handleToggl
         >
           <span className="todo-title">{todo.title}</span>
           <div className="todo-actions">
+            {urgency?.badge && (
+              <span style={{
+                fontSize: '0.68rem',
+                fontWeight: 600,
+                color: urgency.color,
+                border: `1px solid ${urgency.color}`,
+                padding: '0.1rem 0.4rem',
+                borderRadius: '1rem',
+                backgroundColor: urgency.bg,
+              }}>
+                {urgency.badge}
+              </span>
+            )}
             {todo.memo && (
               <span className="memo-indicator">
                 {expandedIds.has(todo.id) ? '▲' : '▼'}
@@ -193,7 +227,28 @@ function SortableTodoItem({ todo, done, expandedIds, setExpandedIds, handleToggl
           )}
         </div>
         {todo.memo && expandedIds.has(todo.id) && (
-          <div className="todo-memo">{formatMemoWithLinks(todo.memo)}</div>
+          editingMemo ? (
+            <textarea
+              ref={memoRef}
+              className="form-input form-textarea memo-inline-edit"
+              value={memoValue}
+              onChange={e => setMemoValue(e.target.value)}
+              onBlur={saveMemo}
+              onKeyDown={e => {
+                if (e.key === 'Escape') { e.preventDefault(); cancelMemo() }
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveMemo() }
+              }}
+              rows={3}
+            />
+          ) : (
+            <div
+              className="todo-memo"
+              onDoubleClick={e => { e.stopPropagation(); setEditingMemo(true) }}
+              title={lang === 'kr' ? '더블클릭으로 수정' : 'Double-click to edit'}
+            >
+              {formatMemoWithLinks(todo.memo)}
+            </div>
+          )
         )}
       </div>
     </li>
@@ -332,6 +387,7 @@ function FolderSection({ folder, todos, todayStr, activeTab, activePriority, exp
                       handleToggle={handleToggle}
                       handleArchive={handleArchive}
                       setEditTodo={setEditTodo}
+                      setTodos={setTodos}
                       lang={lang}
                       todayStr={todayStr}
                     />
