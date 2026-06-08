@@ -3,11 +3,20 @@
 A personal desktop todo app built with Electron + React.  
 Your data stays local — no accounts, no subscriptions, no cost.
 
+Electron + React로 만든 개인용 데스크탑 투두 앱입니다.  
+모든 데이터는 사용자의 컴퓨터에만 저장됩니다 — 계정 없음, 구독 없음, 무료.
+
 ---
 
 ## Download
 
 [Latest Release](https://github.com/SooaMo/momo-todo/releases/latest)
+
+Windows: `MomoTodo-x.x.x-windows-setup.exe`  
+macOS: `MomoTodo-x.x.x-mac.dmg`
+
+> Please download the installer file above, not the source code zip.  
+> Source code zip 파일이 아닌 위의 설치 파일을 다운받아 설치해주세요.
 
 ---
 
