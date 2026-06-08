@@ -15,10 +15,11 @@ function BannerImage({ imageKey, className, onOpenSettings }) {
   const textColor = localStorage.getItem(`${imageKey}-text-color`) || '#000000'
   const textFont = localStorage.getItem(`${imageKey}-text-font`) || 'Pretendard'
   const bgColor = localStorage.getItem(`${imageKey}-bg-color`) || 'var(--color-secondary)'
+  const bgColorCustom = localStorage.getItem(`${imageKey}-bg-color-custom`) || '#ffffff' 
 
   const resolvedBgColor = bgColor === 'custom'
-    ? bgColorCustom
-    : bgColor === 'none' ? undefined : bgColor
+  ? bgColorCustom
+  : bgColor === 'none' ? undefined : bgColor
 
   if (!visible) return null
 
