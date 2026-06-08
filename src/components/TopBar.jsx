@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 
+const isMac = window.navigator.userAgent.includes('Mac')
+
 function TopBar({ alwaysOnTop, onToggleAlwaysOnTop, onOpenArchive, mainView, setMainView, onOpenSettings, stickerPanelOpen, onToggleStickerPanel, hasUpdate }) {
 
   const handleAlwaysOnTop = () => {
@@ -10,7 +12,7 @@ function TopBar({ alwaysOnTop, onToggleAlwaysOnTop, onOpenArchive, mainView, set
   const handleClose = () => window.electronAPI?.closeWindow()
 
   return (
-    <header className="topbar">
+    <header className="topbar" style={{ paddingLeft: isMac ? '5rem' : undefined }}>
       <div className="topbar-left">
         <span className="topbar-title">MomoTodo</span>
         <div className="view-tabs">
@@ -27,10 +29,10 @@ function TopBar({ alwaysOnTop, onToggleAlwaysOnTop, onOpenArchive, mainView, set
           title="Stickers"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <path d="M16 3v5h5"/>
-          <path d="M12 10c-1.5-1.5-4 0-4 2s2 3 4 5c2-2 4-3 4-5s-2.5-3.5-4-2z"/>
-        </svg>
+            <path d="M3 5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <path d="M16 3v5h5"/>
+            <path d="M12 10c-1.5-1.5-4 0-4 2s2 3 4 5c2-2 4-3 4-5s-2.5-3.5-4-2z"/>
+          </svg>
         </button>
 
         {/* Pin */}
@@ -63,20 +65,24 @@ function TopBar({ alwaysOnTop, onToggleAlwaysOnTop, onOpenArchive, mainView, set
           {hasUpdate && <span className="update-dot" />}
         </button>
 
-        {/* Minimize */}
-        <button className="topbar-btn" onClick={handleMinimize} title="Minimize">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-        </button>
+        {/* Minimize — 맥에서는 숨김 */}
+        {!isMac && (
+          <button className="topbar-btn" onClick={handleMinimize} title="Minimize">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+        )}
 
-        {/* Close */}
-        <button className="topbar-btn close-btn" onClick={handleClose} title="Close">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+        {/* Close — 맥에서는 숨김 */}
+        {!isMac && (
+          <button className="topbar-btn close-btn" onClick={handleClose} title="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        )}
       </div>
     </header>
   )

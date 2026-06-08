@@ -16,6 +16,7 @@ const TEXT_COLORS = [
 ]
 const BG_COLORS = [
   { label: 'None', value: 'none' },
+  { label: 'Theme', value: 'var(--color-secondary)' },
   { label: 'White', value: '#ffffff' },
   { label: 'Black', value: '#000000' },
   { label: 'Primary', value: 'var(--color-primary)' },
@@ -158,6 +159,7 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange, lang }) {
                   style={{
                     backgroundColor:
                       c.value === 'none' ? 'transparent'
+                      : c.value === 'var(--color-secondary)' ? 'var(--color-secondary)' 
                       : c.value === 'var(--color-primary)' ? 'var(--color-primary)'
                       : c.value === 'var(--color-secondary)' ? 'var(--color-secondary)'
                       : c.value === 'var(--color-accent)' ? 'var(--color-accent)'
@@ -473,7 +475,7 @@ useEffect(() => {
     'momo-banner-top-text-position': localStorage.getItem('momo-banner-top-text-position') || 'left',
     'momo-banner-top-text-color': localStorage.getItem('momo-banner-top-text-color') || '#000000',
     'momo-banner-top-text-font': localStorage.getItem('momo-banner-top-text-font') || 'Pretendard',
-    'momo-banner-top-bg-color': localStorage.getItem('momo-banner-top-bg-color') || '#ffffff',
+    'momo-banner-top-bg-color': localStorage.getItem('momo-banner-top-bg-color') || 'var(--color-secondary)',
     'momo-banner-top-bg-color-custom': localStorage.getItem('momo-banner-top-bg-color-custom') || '#ffffff',
   }))
 

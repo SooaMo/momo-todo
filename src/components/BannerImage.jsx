@@ -14,8 +14,7 @@ function BannerImage({ imageKey, className, onOpenSettings }) {
   const textPosition = localStorage.getItem(`${imageKey}-text-position`) || 'left'
   const textColor = localStorage.getItem(`${imageKey}-text-color`) || '#000000'
   const textFont = localStorage.getItem(`${imageKey}-text-font`) || 'Pretendard'
-  const bgColor = localStorage.getItem(`${imageKey}-bg-color`) || '#ffffff'
-  const bgColorCustom = localStorage.getItem(`${imageKey}-bg-color-custom`) || '#ffffff'
+  const bgColor = localStorage.getItem(`${imageKey}-bg-color`) || 'var(--color-secondary)'
 
   const resolvedBgColor = bgColor === 'custom'
     ? bgColorCustom

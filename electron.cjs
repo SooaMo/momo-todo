@@ -3,6 +3,7 @@ const path = require('path')
 const Store = require('electron-store')
 const https = require('https')
 const { autoUpdater } = require('electron-updater')
+const isMac = process.platform === 'darwin'
 
 const store = new Store()
 
@@ -46,8 +47,8 @@ function checkForUpdates() {
 
 function createTray() {
   const iconPath = app.isPackaged
-    ? path.join(process.resourcesPath, 'icon.ico')
-    : path.join(__dirname, 'build', 'icon.ico')
+  ? path.join(process.resourcesPath, isMac ? 'icon.png' : 'icon.ico')
+  : path.join(__dirname, 'build', isMac ? 'icon.png' : 'icon.ico')
 
   let trayIcon
   try {
@@ -129,10 +130,15 @@ function createWindow() {
   mainWindow.on('resize', saveBounds)
   mainWindow.on('move', saveBounds)
 
-  mainWindow.on('close', () => {
+  mainWindow.on('close', (e) => {
+  if (isMac && !app.isQuiting) {
+    e.preventDefault()
+    mainWindow.hide()
+  } else {
     app.isQuiting = true
     app.quit()
-  })
+  }
+})
 }
 
 app.whenReady().then(() => {
@@ -221,7 +227,9 @@ ipcMain.handle('show-notification', (event, { title, body }) => {
     new Notification({
       title,
       body,
-      icon: app.isPackaged ? path.join(process.resourcesPath, 'icon.ico') : path.join(__dirname, 'build', 'icon.ico'),
+      icon: app.isPackaged
+  ? path.join(process.resourcesPath, isMac ? 'icon.png' : 'icon.ico')
+  : path.join(__dirname, 'build', isMac ? 'icon.png' : 'icon.ico'),
     }).show()
   }
 })
