@@ -7,20 +7,40 @@ Your data stays local — no accounts, no subscriptions, no cost.
 
 ## Download
 
-👉 [Latest Release](https://github.com/SooaMo/momo-todo/releases/latest)
+[Latest Release](https://github.com/SooaMo/momo-todo/releases/latest)
+
+---
+
+## Screenshots
+
+<div align="center">
+  <img src="docs/screenshots/mint-main.png" width="45%" />
+  <img src="docs/screenshots/sky-main.png" width="45%" />
+</div>
+
+<div align="center">
+  <img src="docs/screenshots/calendar-month.png" width="45%" />
+  <img src="docs/screenshots/calendar-filter.png" width="45%" />
+</div>
+
+<div align="center">
+  <img src="docs/screenshots/calendar-week.png" width="45%" />
+  <img src="docs/screenshots/settings.png" width="45%" />
+</div>
 
 ---
 
 ## Features
 
 - **Todo types** — Daily, Weekly, Date range, One-time
-- **Priority** — High, Mid, Low with auto-sorting
+- **Priority** — High, Mid, Low with urgency indicators
 - **Labels** — Custom text & color tags
-- **Memo** — Add notes to any todo
-- **Calendar** — Month & Week views with completion history
+- **Memo** — Add notes, double-click to edit inline
+- **Folders** — Organize todos into folders with drag & drop
+- **Calendar** — Month & Week views with type/status filter
 - **Stickers** — Drag & drop image stickers on any page
 - **Archive** — Soft delete with restore
-- **Themes** — Mint, Ocean, Lavender, Dark
+- **Themes** — Mint, Peach, Rose, Ocean, Lavender, Ivory, Sky, Dark
 - **Banner** — Customize the top banner with image & text
 - **Always on Top** — Keep the app floating above other windows
 - **Local only** — All data saved on your computer
