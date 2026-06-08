@@ -13,7 +13,7 @@ Electron + React로 만든 개인용 데스크탑 투두 앱입니다.
 [Latest Release](https://github.com/SooaMo/momo-todo/releases/latest)
 
 Windows: `MomoTodo-x.x.x-windows-setup.exe`  
-macOS: `MomoTodo-x.x.x-mac.dmg`
+
 
 > Please download the installer file above, not the source code zip.  
 > Source code zip 파일이 아닌 위의 설치 파일을 다운받아 설치해주세요.
