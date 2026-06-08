@@ -2,7 +2,6 @@ const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, shell, Notificatio
 const path = require('path')
 const Store = require('electron-store')
 const https = require('https')
-const { autoUpdater } = require('electron-updater')
 const isMac = process.platform === 'darwin'
 
 const store = new Store()

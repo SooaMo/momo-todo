@@ -14,11 +14,9 @@ function loadArchive() {
 
 export function saveToArchive(todo) {
   const archive = loadArchive()
-  const archived = {
-    ...todo,
-    archivedAt: new Date().toISOString(),
-  }
-  localStorage.setItem(ARCHIVE_KEY, JSON.stringify([archived, ...archive]))
+  const filtered = archive.filter(t => t.id !== todo.id) // 기존 같은 id 제거
+  const archived = { ...todo, archivedAt: new Date().toISOString() }
+  localStorage.setItem(ARCHIVE_KEY, JSON.stringify([archived, ...filtered]))
 }
 
 function ArchiveModal({ onClose, onRestore, lang }) {

@@ -167,8 +167,8 @@ function AddTodoModal({ onClose, onAdd, initialData, lang, folders, defaultFolde
 
   // type 바뀌면 알람 기본값 리셋
   useEffect(() => {
-    if (alarmEnabled) setAlarms(DEFAULT_ALARMS[type] || [])
-  }, [type])
+  if (alarmEnabled && !isEdit) setAlarms(DEFAULT_ALARMS[type] || [])
+}, [type])
 
   const toggleDay = (day) => {
     setSelectedDays(prev =>

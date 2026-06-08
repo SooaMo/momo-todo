@@ -62,7 +62,6 @@ function getUrgencyBorder(todo, todayStr, lang) {
     : !!(todo.completions?.[todayStr])
   if (isCompleted) return null
 
-  // 로컬 시간 기준 오늘 자정
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -137,18 +136,18 @@ function SortableTodoItem({ todo, done, expandedIds, setExpandedIds, handleToggl
     opacity: isDragging ? 0.3 : 1,
   }
 
- const urgency = !done ? getUrgencyBorder(todo, todayStr, lang) : null
+  const urgency = !done ? getUrgencyBorder(todo, todayStr, lang) : null
 
-return (
-  <li
-    ref={setNodeRef}
-    style={isDragOverlay ? {} : {
-      ...style,
-      borderTop: urgency ? `2px solid ${urgency.color}` : undefined,
-      backgroundColor: urgency?.bg || undefined,
-    }}
-    className={`todo-item ${done ? 'completed' : ''}`}
-  >
+  return (
+    <li
+      ref={setNodeRef}
+      style={isDragOverlay ? {} : {
+        ...style,
+        borderTop: urgency ? `2px solid ${urgency.color}` : undefined,
+        backgroundColor: urgency?.bg || undefined,
+      }}
+      className={`todo-item ${done ? 'completed' : ''}`}
+    >
       <button className="todo-drag-handle" {...attributes} {...listeners} tabIndex={-1}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/>
@@ -273,6 +272,22 @@ function DroppableFolder({ folder, children, isOver }) {
 
 function FolderSection({ folder, todos, todayStr, activeTab, activePriority, expandedIds, setExpandedIds,
   handleToggle, handleArchive, setEditTodo, lang, folders, setFolders, setTodos, openFolders, setOpenFolders, isOver }) {
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `folder-${folder.id}`, data: { type: 'folder-sort', folderId: folder.id } })
+
+  const folderDragStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
   const t = getT(lang)
   const isOpen = openFolders.has(folder.id)
   const [editingName, setEditingName] = useState(false)
@@ -283,18 +298,25 @@ function FolderSection({ folder, todos, todayStr, activeTab, activePriority, exp
     return !!(todo.completions?.[todayStr])
   }
 
-  const isVisibleToday = (todo) => {
-    const today = new Date()
-    const dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][today.getDay()]
-    if (todo.type === 'daily') return true
-    if (todo.type === 'weekly') return todo.selectedDays?.includes(dayOfWeek)
-    if (todo.type === 'date') return todayStr >= todo.startDate && todayStr <= todo.endDate
-    if (todo.type === 'one-time') {
-      if (!todo.dueDate) return true
-      return !(todo.completions?.[todo.dueDate])
-    }
+const isVisibleToday = (todo) => {
+  const today = new Date()
+  const dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][today.getDay()]
+  if (todo.exceptions?.includes(todayStr)) return false
+  if (todo.type === 'daily') {
+    if (todo.endDate && todayStr > todo.endDate) return false
     return true
   }
+  if (todo.type === 'weekly') {
+    if (todo.endDate && todayStr > todo.endDate) return false
+    return todo.selectedDays?.includes(dayOfWeek)
+  }
+  if (todo.type === 'date') return todayStr >= todo.startDate && todayStr <= todo.endDate
+  if (todo.type === 'one-time') {
+    if (!todo.dueDate) return true
+    return !(todo.completions?.[todo.dueDate])
+  }
+  return true
+}
 
   const folderTodos = todos
     .filter(t => t.folderId === folder.id)
@@ -321,84 +343,98 @@ function FolderSection({ folder, todos, todayStr, activeTab, activePriority, exp
   }
 
   return (
-    <DroppableFolder folder={folder} isOver={isOver}>
-      <div className="folder-section">
-        <div className="folder-header" onClick={() => setOpenFolders(prev => {
-          const next = new Set(prev)
-          next.has(folder.id) ? next.delete(folder.id) : next.add(folder.id)
-          return next
-        })}>
-          <div className="folder-header-left">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-            {editingName ? (
-              <input
-                className="folder-name-input"
-                value={folderName}
-                onChange={e => setFolderName(e.target.value)}
-                onBlur={handleRenameFolder}
-                onKeyDown={e => { if (e.key === 'Enter') handleRenameFolder(); if (e.key === 'Escape') setEditingName(false) }}
+    <div ref={setNodeRef} style={folderDragStyle}>
+      <DroppableFolder folder={folder} isOver={isOver}>
+        <div className="folder-section">
+          <div className="folder-header" onClick={() => setOpenFolders(prev => {
+            const next = new Set(prev)
+            next.has(folder.id) ? next.delete(folder.id) : next.add(folder.id)
+            return next
+          })}>
+            <div className="folder-header-left">
+              <div
+                className="todo-drag-handle"
+                {...attributes}
+                {...listeners}
                 onClick={e => e.stopPropagation()}
-                autoFocus
-              />
-            ) : (
-              <span className="folder-name">{folder.name}</span>
-            )}
-            <span className="folder-count">{folderTodos.length}</span>
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/>
+                  <circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/>
+                  <circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/>
+                </svg>
+              </div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+              {editingName ? (
+                <input
+                  className="folder-name-input"
+                  value={folderName}
+                  onChange={e => setFolderName(e.target.value)}
+                  onBlur={handleRenameFolder}
+                  onKeyDown={e => { if (e.key === 'Enter') handleRenameFolder(); if (e.key === 'Escape') setEditingName(false) }}
+                  onClick={e => e.stopPropagation()}
+                  autoFocus
+                />
+              ) : (
+                <span className="folder-name">{folder.name}</span>
+              )}
+              <span className="folder-count">{folderTodos.length}</span>
+            </div>
+            <div className="folder-header-right" onClick={e => e.stopPropagation()}>
+              {!folder.isDefault && (
+                <>
+                  <button className="folder-action-btn" onClick={() => { setEditingName(true); setOpenFolders(prev => new Set([...prev, folder.id])) }} title="Rename">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button className="folder-action-btn" onClick={handleDeleteFolder} title="Delete folder">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6l-1 14H6L5 6"/>
+                      <path d="M10 11v6M14 11v6"/>
+                      <path d="M9 6V4h6v2"/>
+                    </svg>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-          <div className="folder-header-right" onClick={e => e.stopPropagation()}>
-            {!folder.isDefault && (
-              <>
-                <button className="folder-action-btn" onClick={() => { setEditingName(true); setOpenFolders(prev => new Set([...prev, folder.id])) }} title="Rename">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-                <button className="folder-action-btn" onClick={handleDeleteFolder} title="Delete folder">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6l-1 14H6L5 6"/>
-                    <path d="M10 11v6M14 11v6"/>
-                    <path d="M9 6V4h6v2"/>
-                  </svg>
-                </button>
-              </>
-            )}
-          </div>
-        </div>
 
-        {isOpen && (
-          <div className="folder-content">
-            {folderTodos.length === 0 ? (
-              <p className="folder-empty">{t.noTodos}</p>
-            ) : (
-              <SortableContext items={folderTodos.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                <ul className="todo-items">
-                  {folderTodos.map(todo => (
-                    <SortableTodoItem
-                      key={todo.id}
-                      todo={todo}
-                      done={isTodayCompleted(todo)}
-                      expandedIds={expandedIds}
-                      setExpandedIds={setExpandedIds}
-                      handleToggle={handleToggle}
-                      handleArchive={handleArchive}
-                      setEditTodo={setEditTodo}
-                      setTodos={setTodos}
-                      lang={lang}
-                      todayStr={todayStr}
-                    />
-                  ))}
-                </ul>
-              </SortableContext>
-            )}
-          </div>
-        )}
-      </div>
-    </DroppableFolder>
+          {isOpen && (
+            <div className="folder-content">
+              {folderTodos.length === 0 ? (
+                <p className="folder-empty">{t.noTodos}</p>
+              ) : (
+                <SortableContext items={folderTodos.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                  <ul className="todo-items">
+                    {folderTodos.map(todo => (
+                      <SortableTodoItem
+                        key={todo.id}
+                        todo={todo}
+                        done={isTodayCompleted(todo)}
+                        expandedIds={expandedIds}
+                        setExpandedIds={setExpandedIds}
+                        handleToggle={handleToggle}
+                        handleArchive={handleArchive}
+                        setEditTodo={setEditTodo}
+                        setTodos={setTodos}
+                        lang={lang}
+                        todayStr={todayStr}
+                      />
+                    ))}
+                  </ul>
+                </SortableContext>
+              )}
+            </div>
+          )}
+        </div>
+      </DroppableFolder>
+    </div>
   )
 }
 
@@ -459,6 +495,17 @@ function TodoList({ todos, setTodos, folders, setFolders, lang, onOpenSettings }
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // 기존 todo에 folderId 없으면 default 폴더로 마이그레이션
+  useEffect(() => {
+    setTodos(prev => {
+      const needsMigration = prev.some(todo => todo.folderId === undefined)
+      if (!needsMigration) return prev
+      return prev.map(todo =>
+        todo.folderId === undefined ? { ...todo, folderId: 'default' } : todo
+      )
+    })
+  }, [])
+
   const handleAdd = (todo) => setTodos(prev => [...prev, todo])
   const handleEdit = (updated) => setTodos(prev => prev.map(t => t.id === updated.id ? updated : t))
 
@@ -485,16 +532,18 @@ function TodoList({ todos, setTodos, folders, setFolders, lang, onOpenSettings }
   }
 
   const handleDragOver = (event) => {
-    const { over } = event
-    if (!over) { setOverFolderId(null); return }
-    if (over.data.current?.type === 'folder') {
-      setOverFolderId(over.data.current.folderId)
-    } else if (over.data.current?.type === 'todo') {
-      setOverFolderId(over.data.current.folderId)
-    } else {
-      setOverFolderId(null)
-    }
+  const { over } = event
+  if (!over) { setOverFolderId(null); return }
+  if (over.data.current?.type === 'folder') {
+    setOverFolderId(over.data.current.folderId)
+  } else if (over.data.current?.type === 'todo') {
+    setOverFolderId(over.data.current.folderId)
+  } else if (over.data.current?.type === 'folder-sort') {  // ← 추가
+    setOverFolderId(over.data.current.folderId)
+  } else {
+    setOverFolderId(null)
   }
+}
 
   const handleDragEnd = (event) => {
     const { active, over } = event
@@ -503,14 +552,27 @@ function TodoList({ todos, setTodos, folders, setFolders, lang, onOpenSettings }
 
     if (!over) return
 
+    // 폴더 순서 변경
+    if (active.data.current?.type === 'folder-sort' && over.data.current?.type === 'folder-sort') {
+      const oldIndex = sortedFolders.findIndex(f => `folder-${f.id}` === active.id)
+      const newIndex = sortedFolders.findIndex(f => `folder-${f.id}` === over.id)
+      if (oldIndex !== newIndex && newIndex !== -1) {
+        const reordered = arrayMove(sortedFolders, oldIndex, newIndex)
+        setFolders(reordered.map((f, i) => ({ ...f, order: i })))
+      }
+      return
+    }
+
     const activeTodo = todos.find(t => t.id === active.id)
     if (!activeTodo) return
 
     const targetFolderId = over.data.current?.type === 'folder'
-      ? over.data.current.folderId
-      : over.data.current?.type === 'todo'
-        ? over.data.current.folderId
-        : null
+  ? over.data.current.folderId
+  : over.data.current?.type === 'todo'
+    ? over.data.current.folderId
+  : over.data.current?.type === 'folder-sort'  // ← 추가
+    ? over.data.current.folderId
+    : null
 
     if (!targetFolderId) return
 
@@ -627,28 +689,33 @@ function TodoList({ todos, setTodos, folders, setFolders, lang, onOpenSettings }
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        {sortedFolders.map(folder => (
-          <FolderSection
-            key={folder.id}
-            folder={folder}
-            todos={todos}
-            todayStr={todayStr}
-            activeTab={activeTab}
-            activePriority={activePriority}
-            expandedIds={expandedIds}
-            setExpandedIds={setExpandedIds}
-            handleToggle={handleToggle}
-            handleArchive={handleArchive}
-            setEditTodo={setEditTodo}
-            lang={lang}
-            folders={folders}
-            setFolders={setFolders}
-            setTodos={setTodos}
-            openFolders={openFolders}
-            setOpenFolders={setOpenFolders}
-            isOver={overFolderId === folder.id}
-          />
-        ))}
+        <SortableContext
+          items={sortedFolders.map(f => `folder-${f.id}`)}
+          strategy={verticalListSortingStrategy}
+        >
+          {sortedFolders.map(folder => (
+            <FolderSection
+              key={folder.id}
+              folder={folder}
+              todos={todos}
+              todayStr={todayStr}
+              activeTab={activeTab}
+              activePriority={activePriority}
+              expandedIds={expandedIds}
+              setExpandedIds={setExpandedIds}
+              handleToggle={handleToggle}
+              handleArchive={handleArchive}
+              setEditTodo={setEditTodo}
+              lang={lang}
+              folders={folders}
+              setFolders={setFolders}
+              setTodos={setTodos}
+              openFolders={openFolders}
+              setOpenFolders={setOpenFolders}
+              isOver={overFolderId === folder.id}
+            />
+          ))}
+        </SortableContext>
 
         <DragOverlay>
           {activeTodo ? (
@@ -661,6 +728,7 @@ function TodoList({ todos, setTodos, folders, setFolders, lang, onOpenSettings }
                 handleToggle={() => {}}
                 handleArchive={() => {}}
                 setEditTodo={() => {}}
+                setTodos={() => {}}
                 lang={lang}
                 isDragOverlay
                 todayStr={todayStr}

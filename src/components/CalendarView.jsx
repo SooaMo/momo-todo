@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import AddTodoModal from './AddTodoModal'
+import { saveToArchive } from './ArchiveModal'
 import { getT } from '../i18n'
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const TODO_TYPES = ['daily', 'weekly', 'date', 'one-time']
-const ROW_HEIGHT = 1.4 // rem
-const DATE_NUM_HEIGHT = 1.4 // rem - 날짜 숫자 높이
-const CHIP_HEIGHT = 1.2 // rem - chip 높이
-const CHIP_GAP = 0.15 // rem
+const ROW_HEIGHT = 1.4
+const DATE_NUM_HEIGHT = 1.4
+const CHIP_HEIGHT = 1.2
+const CHIP_GAP = 0.15
 
 function formatDateStr(date) {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
@@ -31,8 +32,15 @@ function getTodosForDate(todos, date, activeTypes) {
   const dayOfWeek = DAYS_OF_WEEK[date.getDay()]
   return todos.filter(todo => {
     if (!activeTypes.includes(todo.type)) return false
-    if (todo.type === 'daily') return true
-    if (todo.type === 'weekly') return todo.selectedDays?.includes(dayOfWeek)
+    if (todo.exceptions?.includes(dateStr)) return false
+    if (todo.type === 'daily') {
+      if (todo.endDate && dateStr > todo.endDate) return false
+      return true
+    }
+    if (todo.type === 'weekly') {
+      if (todo.endDate && dateStr > todo.endDate) return false
+      return todo.selectedDays?.includes(dayOfWeek)
+    }
     if (todo.type === 'date') return todo.startDate && todo.endDate && dateStr >= todo.startDate && dateStr <= todo.endDate
     if (todo.type === 'one-time') return todo.dueDate === dateStr
     return false
@@ -50,10 +58,18 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang, folders }) {
   const [selectedDate, setSelectedDate] = useState(today)
   const [editTodo, setEditTodo] = useState(null)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [activeTypes, setActiveTypes] = useState(TODO_TYPES)
+  const [activeTypes, setActiveTypes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('momo-cal-active-types')
+      return saved ? JSON.parse(saved) : TODO_TYPES
+    } catch { return TODO_TYPES }
+  })
   const [showFilter, setShowFilter] = useState(false)
   const [showDatePicker, setShowDatePicker] = useState(false)
-  const [completionFilter, setCompletionFilter] = useState('active')
+  const [completionFilter, setCompletionFilter] = useState(() => {
+    return localStorage.getItem('momo-cal-completion-filter') || 'active'
+  })
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -102,6 +118,31 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang, folders }) {
     setTodos(prev => prev.map(t => t.id === updated.id ? updated : t))
   }
 
+  const handleDeleteThisDay = () => {
+    const { todo, dateStr } = deleteTarget
+    setTodos(prev => prev.map(t =>
+      t.id === todo.id
+        ? { ...t, exceptions: [...(t.exceptions || []), dateStr] }
+        : t
+    ))
+    setDeleteTarget(null)
+  }
+
+  const handleDeleteFromHere = () => {
+    const { todo, dateStr } = deleteTarget
+    setTodos(prev => prev.map(t =>
+      t.id === todo.id ? { ...t, endDate: dateStr } : t
+    ))
+    setDeleteTarget(null)
+  }
+
+  const handleDeleteAll = () => {
+    const { todo } = deleteTarget
+    saveToArchive(todo)
+    setTodos(prev => prev.filter(t => t.id !== todo.id))
+    setDeleteTarget(null)
+  }
+
   const buildMonthGrid = () => {
     const cells = []
     for (let i = 0; i < firstDay; i++) cells.push(null)
@@ -110,19 +151,19 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang, folders }) {
     return cells
   }
 
-  const buildDateSpans = (cells, filter) => {
-  const dateTodos = todos
-  .filter(t => t.type === 'date' && t.startDate && t.endDate && activeTypes.includes('date'))
-  .filter(t => {
-    const hasAnyCompletion = t.completions && Object.keys(t.completions).length > 0
-    if (completionFilter === 'active') return !hasAnyCompletion
-    if (completionFilter === 'completed') return hasAnyCompletion
-    return true
-  })
-  .sort((a, b) => {
-    const order = { high: 0, mid: 1, low: 2 }
-    return (order[a.priority] ?? 1) - (order[b.priority] ?? 1)
-  })
+  const buildDateSpans = (cells) => {
+    const dateTodos = todos
+      .filter(t => t.type === 'date' && t.startDate && t.endDate && activeTypes.includes('date'))
+      .filter(t => {
+        const hasAnyCompletion = t.completions && Object.keys(t.completions).length > 0
+        if (completionFilter === 'active') return !hasAnyCompletion
+        if (completionFilter === 'completed') return hasAnyCompletion
+        return true
+      })
+      .sort((a, b) => {
+        const order = { high: 0, mid: 1, low: 2 }
+        return (order[a.priority] ?? 1) - (order[b.priority] ?? 1)
+      })
 
     const spans = []
     const rowOccupancy = {}
@@ -166,11 +207,10 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang, folders }) {
   }
 
   const cells = buildMonthGrid()
-  const { spans: dateSpans, rowOccupancy } = buildDateSpans(cells, completionFilter)
+  const { spans: dateSpans, rowOccupancy } = buildDateSpans(cells)
   const weeks = []
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
 
-  // 각 셀마다 date span이 몇 개 row를 차지하는지 계산
   const getMaxRowForCell = (cellIndex) => {
     if (!rowOccupancy[cellIndex]) return 0
     return rowOccupancy[cellIndex].size
@@ -180,32 +220,40 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang, folders }) {
   const selectedDayTodos = getTodosForDate(todos, selectedDate, activeTypes)
 
   const sortedDayTodos = [...selectedDayTodos]
-  .filter(todo => {
-    const done = isCompletedOnDate(todo, selectedDateStr)
-    if (completionFilter === 'active') return !done
-    if (completionFilter === 'completed') return done
-    return true
-  })
-  .sort((a, b) => {
-    const aDone = isCompletedOnDate(a, selectedDateStr)
-    const bDone = isCompletedOnDate(b, selectedDateStr)
-    if (aDone !== bDone) return aDone ? 1 : -1
-    return 0
-  })
+    .filter(todo => {
+      const done = isCompletedOnDate(todo, selectedDateStr)
+      if (completionFilter === 'active') return !done
+      if (completionFilter === 'completed') return done
+      return true
+    })
+    .sort((a, b) => {
+      const aDone = isCompletedOnDate(a, selectedDateStr)
+      const bDone = isCompletedOnDate(b, selectedDateStr)
+      if (aDone !== bDone) return aDone ? 1 : -1
+      return 0
+    })
 
   const isAllSelected = activeTypes.length === TODO_TYPES.length
 
   const filterRef = useRef(null)
 
-useEffect(() => {
-  const handleClickOutside = (e) => {
-    if (filterRef.current && !filterRef.current.contains(e.target)) {
-      setShowFilter(false)
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (filterRef.current && !filterRef.current.contains(e.target)) {
+        setShowFilter(false)
+      }
     }
-  }
-  document.addEventListener('mousedown', handleClickOutside)
-  return () => document.removeEventListener('mousedown', handleClickOutside)
-}, [])
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('momo-cal-completion-filter', completionFilter)
+  }, [completionFilter])
+
+  useEffect(() => {
+    localStorage.setItem('momo-cal-active-types', JSON.stringify(activeTypes))
+  }, [activeTypes])
 
   return (
     <div className="calendar-view">
@@ -336,7 +384,6 @@ useEffect(() => {
                 </div>
               </div>
             )}
-
           </div>
 
           <div className="cal-view-tabs">
@@ -356,20 +403,8 @@ useEffect(() => {
           </div>
           {weeks.map((week, weekIdx) => {
             const weekStartIndex = weekIdx * 7
-
-            // 이번 주의 최대 date span row 수 계산
             const maxSpanRows = Math.max(0, ...week.map((_, i) => getMaxRowForCell(weekStartIndex + i)))
-
-            const weekSpans = dateSpans.filter(({ todo }) => {
-                if (completionFilter === 'all') return true
-                // 기간 중 한번이라도 체크했는지 확인
-                const hasAnyCompletion = todo.completions && Object.keys(todo.completions).length > 0
-                if (completionFilter === 'active') return !hasAnyCompletion
-                if (completionFilter === 'completed') return hasAnyCompletion
-                return true
-              })
-
-            // date span들이 차지하는 높이
+            const weekSpans = dateSpans
             const spanAreaHeight = maxSpanRows > 0 ? DATE_NUM_HEIGHT + maxSpanRows * ROW_HEIGHT + 0.2 : DATE_NUM_HEIGHT
 
             return (
@@ -381,17 +416,17 @@ useEffect(() => {
                     const isToday = isSameDay(date, today)
                     const isSelected = isSameDay(date, selectedDate)
                     const regularTodos = getTodosForDate(todos, date, activeTypes)
-                        .filter(t => t.type !== 'date')
-                        .filter(t => {
-                          if (completionFilter === 'active') return !isCompletedOnDate(t, dateStr)
-                          if (completionFilter === 'completed') return isCompletedOnDate(t, dateStr)
-                          return true
-                        })
+                      .filter(t => t.type !== 'date')
+                      .filter(t => {
+                        if (completionFilter === 'active') return !isCompletedOnDate(t, dateStr)
+                        if (completionFilter === 'completed') return isCompletedOnDate(t, dateStr)
+                        return true
+                      })
                     const maxSpanRowsForCell = getMaxRowForCell(weekStartIndex + i)
                     const TOTAL_LIMIT = 5
                     const availableChipSlots = Math.max(0, TOTAL_LIMIT - maxSpanRowsForCell)
                     const visibleChips = regularTodos.slice(0, availableChipSlots)
-                    const hiddenCount = (regularTodos.length - visibleChips.length)
+                    const hiddenCount = regularTodos.length - visibleChips.length
                     return (
                       <div
                         key={i}
@@ -400,8 +435,7 @@ useEffect(() => {
                         onClick={() => { setSelectedDate(date); setCalView('week') }}
                       >
                         <span className="month-cell-date">{date.getDate()}</span>
-                        {/* date span 자리만큼 빈 공간 */}
-                      <div style={{ height: `${maxSpanRows > 0 ? maxSpanRows * ROW_HEIGHT + 0.2 : 0}rem` }} />
+                        <div style={{ height: `${maxSpanRows > 0 ? maxSpanRows * ROW_HEIGHT + 0.2 : 0}rem` }} />
                         <div className="month-cell-chips">
                           {visibleChips.map(todo => {
                             const done = isCompletedOnDate(todo, dateStr)
@@ -432,16 +466,16 @@ useEffect(() => {
                   const done = firstDateOfSpanInWeek ? isCompletedOnDate(todo, formatDateStr(firstDateOfSpanInWeek)) : false
                   return (
                     <div key={`${todo.id}-${cellIndex}`} className="month-span-bar" style={{
-                        left: `calc(${localIndex / 7 * 100}% + 0.1rem)`,
-                        width: `calc(${spanLen / 7 * 100}% - 0.2rem)`,
-                        top: `calc(${DATE_NUM_HEIGHT + row * ROW_HEIGHT}rem)`,
-                        backgroundColor: color + '50',
-                        borderLeft: isFirstCell ? `2.5px solid ${color}` : 'none',
-                        borderRadius: isFirstCell
-                          ? (localIndex + spanLen >= 7 ? '0.2rem 0 0 0.2rem' : '0.2rem')
-                          : (localIndex + spanLen >= 7 ? '0' : '0 0.2rem 0.2rem 0'),
-                        opacity: done ? 0.45 : 1,
-                      }}>
+                      left: `calc(${localIndex / 7 * 100}% + 0.1rem)`,
+                      width: `calc(${spanLen / 7 * 100}% - 0.2rem)`,
+                      top: `calc(${DATE_NUM_HEIGHT + row * ROW_HEIGHT}rem)`,
+                      backgroundColor: color + '50',
+                      borderLeft: isFirstCell ? `2.5px solid ${color}` : 'none',
+                      borderRadius: isFirstCell
+                        ? (localIndex + spanLen >= 7 ? '0.2rem 0 0 0.2rem' : '0.2rem')
+                        : (localIndex + spanLen >= 7 ? '0' : '0 0.2rem 0.2rem 0'),
+                      opacity: done ? 0.45 : 1,
+                    }}>
                       {(isFirstCell || localIndex === 0) && (
                         <span className="month-span-title" style={{ textDecoration: done ? 'line-through' : 'none' }}>
                           {todo.title}
@@ -504,12 +538,23 @@ useEffect(() => {
                       <div className="todo-info">
                         <div className="todo-title-row">
                           <span className="todo-title">{todo.title}</span>
-                          <button className="todo-edit" onClick={() => setEditTodo(todo)}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                          </button>
+                          <div className="todo-actions">
+                            <button className="todo-edit" onClick={() => setEditTodo(todo)}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              </svg>
+                            </button>
+                            <button className="todo-delete" onClick={e => {
+                              e.stopPropagation()
+                              setDeleteTarget({ todo, dateStr: selectedDateStr })
+                            }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                              </svg>
+                            </button>
+                          </div>
                         </div>
                         <div className="todo-meta">
                           <span className={`priority-badge priority-${todo.priority}`}>
@@ -535,32 +580,67 @@ useEffect(() => {
         </div>
       )}
 
+      {/* 삭제 팝업 */}
+      {deleteTarget && (
+        <div className="modal-overlay" onClick={() => setDeleteTarget(null)}>
+          <div className="modal cal-delete-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">{t.calDeleteTitle}</h2>
+              <button className="modal-close" onClick={() => setDeleteTarget(null)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              {(deleteTarget.todo.type === 'daily' || deleteTarget.todo.type === 'weekly') ? (
+                <>
+                  <p className="settings-data-desc">{t.calDeleteWarning}</p>
+                  <button className="settings-help-btn" onClick={handleDeleteThisDay}>
+                    {t.calDeleteThisDay}
+                  </button>
+                  <button className="settings-help-btn" onClick={handleDeleteFromHere}>
+                    {t.calDeleteFromHere}
+                  </button>
+                  <button className="settings-help-btn danger" onClick={handleDeleteAll}>
+                    {t.calDeleteAll}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="settings-data-desc">{t.calDeleteArchiveWarning}</p>
+                  <button className="settings-help-btn danger" onClick={handleDeleteAll}>
+                    {t.calDeleteConfirm}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {editTodo && (
         <AddTodoModal onClose={() => setEditTodo(null)} onAdd={handleEdit} initialData={editTodo} lang={lang} />
       )}
 
-      {/* Floating + button */}
-<button
-  className="cal-fab-btn"
-  onClick={() => setShowAddModal(true)}
->
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="5" x2="12" y2="19"/>
-    <line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-</button>
+      <button className="cal-fab-btn" onClick={() => setShowAddModal(true)}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
 
-{showAddModal && (
-  <AddTodoModal
-    onClose={() => setShowAddModal(false)}
-    onAdd={(todo) => setTodos(prev => [...prev, todo])}
-    lang={lang}
-    folders={folders}
-    defaultFolderId="default"
-    allTodos={todos}
-  />
-)}
-
+      {showAddModal && (
+        <AddTodoModal
+          onClose={() => setShowAddModal(false)}
+          onAdd={(todo) => setTodos(prev => [...prev, todo])}
+          lang={lang}
+          folders={folders}
+          defaultFolderId="default"
+          allTodos={todos}
+        />
+      )}
     </div>
   )
 }

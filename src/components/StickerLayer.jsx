@@ -12,7 +12,6 @@ function StickerLayer({ pageKey, stickerMode }) {
   const [selectedId, setSelectedId] = useState(null)
   const [resizing, setResizing] = useState(null)
   const [rotating, setRotating] = useState(null)
-  const [loaded, setLoaded] = useState(false)
   const layerRef = useRef(null)
   const pageKeyRef = useRef(pageKey)
   const isLoadingRef = useRef(false)

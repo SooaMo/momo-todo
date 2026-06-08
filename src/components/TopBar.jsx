@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { } from 'react'
 
 const isMac = window.navigator.userAgent.includes('Mac')
 

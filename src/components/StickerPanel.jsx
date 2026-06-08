@@ -16,7 +16,7 @@ function StickerPanel({ onClose, pageKey, lang }) {
     files.forEach(file => {
       const reader = new FileReader()
       reader.onload = (ev) => {
-        const newSticker = { id: Date.now() + Math.random(), src: ev.target.result }
+        const newSticker = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, src: ev.target.result }
         setStickers(prev => {
           const updated = [...prev, newSticker]
           localStorage.setItem('momo-sticker-library', JSON.stringify(updated))

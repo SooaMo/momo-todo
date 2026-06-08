@@ -20,7 +20,6 @@ const BG_COLORS = [
   { label: 'White', value: '#ffffff' },
   { label: 'Black', value: '#000000' },
   { label: 'Primary', value: 'var(--color-primary)' },
-  { label: 'Secondary', value: 'var(--color-secondary)' },
   { label: 'Accent', value: 'var(--color-accent)' },
 ]
 const THEMES = [
@@ -55,7 +54,7 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange, lang }) {
   const textPosition = settings[`${imageKey}-text-position`] || 'left'
   const textColor = settings[`${imageKey}-text-color`] || '#000000'
   const textFont = settings[`${imageKey}-text-font`] || 'Pretendard'
-  const bgColor = settings[`${imageKey}-bg-color`] || '#ffffff'
+  const bgColor = settings[`${imageKey}-bg-color`] || 'var(--color-secondary)'
   const bgColorCustom = settings[`${imageKey}-bg-color-custom`] || '#ffffff'
 
   const resolvedBgColor = bgColor === 'custom'
@@ -78,8 +77,8 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange, lang }) {
       <div className="settings-banner-header">
         <span className="settings-banner-label">{label}</span>
         <button className={`settings-toggle ${visible ? 'on' : 'off'}`} onClick={handleToggleVisible}>
-          {visible ? 'ON' : 'OFF'}
-        </button>
+  <span className="toggle-label">{visible ? 'ON' : 'OFF'}</span>
+</button>
       </div>
 
       {visible && (
@@ -158,12 +157,11 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange, lang }) {
                   className={`settings-color-btn ${bgColor === c.value ? 'active' : ''}`}
                   style={{
                     backgroundColor:
-                      c.value === 'none' ? 'transparent'
-                      : c.value === 'var(--color-secondary)' ? 'var(--color-secondary)' 
-                      : c.value === 'var(--color-primary)' ? 'var(--color-primary)'
-                      : c.value === 'var(--color-secondary)' ? 'var(--color-secondary)'
-                      : c.value === 'var(--color-accent)' ? 'var(--color-accent)'
-                      : c.value,
+                    c.value === 'none' ? 'transparent'
+                    : c.value === 'var(--color-secondary)' ? 'var(--color-secondary)'
+                    : c.value === 'var(--color-primary)' ? 'var(--color-primary)'
+                    : c.value === 'var(--color-accent)' ? 'var(--color-accent)'
+                    : c.value,
                     border: ['none', '#ffffff'].includes(c.value) ? '1px solid var(--color-secondary)' : 'none',
                   }}
                   onClick={() => onSettingsChange({ [`${imageKey}-bg-color`]: c.value })}
@@ -460,7 +458,6 @@ function SettingsModal({ onClose, lang, setLang, onPreviewTheme, initialTab }) {
   const [showHelp, setShowHelp] = useState(false)
   const [currentTheme, setCurrentTheme] = useState(() => localStorage.getItem('momo-theme') || 'mint')
   const [appVersion, setAppVersion] = useState('...')
-  const [hoveredTheme, setHoveredTheme] = useState(null)
 
 useEffect(() => {
   window.electronAPI?.getAppVersion?.().then(v => setAppVersion(v))

@@ -15,84 +15,34 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
-
-      - name: Cache Electron
-        uses: actions/cache@v3
-        with:
-          path: ~\AppData\Local\electron\Cache
-          key: electron-windows-28.3.3
-
       - name: Install dependencies
         run: npm install
-        env:
-          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
-
       - name: Build Windows
         run: npm run dist
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
-
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
           path: release/*.exe
 
-  build-mac:
-    runs-on: macos-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Cache Electron
-        uses: actions/cache@v3
-        with:
-          path: ~/Library/Caches/electron
-          key: electron-mac-28.3.3
-
-      - name: Install dependencies
-        run: npm install
-        env:
-          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
-
-      - name: Build Mac
-        run: npm run dist
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
-
-      - name: Upload Mac artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mac-build
-          path: release/*.dmg
-
   release:
-    needs: [build-windows, build-mac]
+    needs: [build-windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
-
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             windows-build/*.exe
-            mac-build/*.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

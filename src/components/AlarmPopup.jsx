@@ -54,7 +54,9 @@ export function useAlarmChecker(todos, lang) {
           }
 
           if (todo.type === 'date' && todo.endDate) {
-            const endDate = new Date(todo.endDate + 'T23:59:00')
+            const [y, m, d] = todo.endDate.split('-').map(Number)
+            const endDate = new Date(y, m-1, d)
+            endDate.setHours(23, 59, 0, 0)
             const diffDays = Math.floor((endDate - now) / (1000 * 60 * 60 * 24))
             if (diffDays === alarm.daysBefore && timeStr === alarm.time && !isCompletedToday && !isDismissed(todo.id, alarmKey)) {
               const msg = alarm.daysBefore === 0
@@ -94,7 +96,7 @@ export function useAlarmChecker(todos, lang) {
       }
 
       // 기본 알람 (alarmEnabled가 없거나 false인 경우 - 기본 동작)
-      if (todo.alarmEnabled === false) return // 명시적으로 끈 경우 스킵
+      if (!todo.alarmEnabled) return // 명시적으로 끈 경우 스킵
 
       if (todo.type === 'daily') {
         if (timeStr === '23:30' && !isCompletedToday && !isDismissed(todo.id, 'daily-2330')) {
@@ -119,7 +121,9 @@ export function useAlarmChecker(todos, lang) {
       }
 
       if (todo.type === 'date' && todo.endDate) {
-        const endDate = new Date(todo.endDate + 'T23:59:00')
+        const [y, m, d] = todo.endDate.split('-').map(Number)
+        const endDate = new Date(y, m-1, d)
+        endDate.setHours(23, 59, 0, 0)
         const diffDays = Math.floor((endDate - now) / (1000 * 60 * 60 * 24))
 
         const dateAlarms = [
@@ -143,7 +147,8 @@ export function useAlarmChecker(todos, lang) {
       }
 
       if (todo.type === 'one-time' && todo.dueDate) {
-        const dueDate = new Date(todo.dueDate)
+      const [year, month, day] = todo.dueDate.split('-').map(Number)
+      const dueDate = new Date(year, month - 1, day)
         if (todo.time) {
           const [h, m] = todo.time.split(':').map(Number)
           dueDate.setHours(h, m, 0, 0)
@@ -178,6 +183,20 @@ export function useAlarmChecker(todos, lang) {
       })
     }
   }
+
+  useEffect(() => {
+  const today = new Date().toDateString()
+  const cleaned = {}
+  Object.entries(dismissedAlarms).forEach(([key, val]) => {
+    if (new Date(val).toDateString() === today) {
+      cleaned[key] = val
+    }
+  })
+  if (Object.keys(cleaned).length !== Object.keys(dismissedAlarms).length) {
+    localStorage.setItem('momo-dismissed-alarms', JSON.stringify(cleaned))
+    setDismissedAlarms(cleaned)
+  }
+}, [])
 
   useEffect(() => {
     const interval = setInterval(checkAlarms, 60000)

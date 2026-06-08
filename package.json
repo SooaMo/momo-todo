@@ -1,7 +1,7 @@
 {
   "name": "momo-todo",
   "private": true,
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "electron.cjs",
   "scripts": {
     "dev": "vite",
@@ -34,15 +34,10 @@
         "to": "icon.png"
       }
     ],
-    "win": {
+      "win": {
       "target": "nsis",
       "icon": "build/icon.ico",
       "artifactName": "${productName}-${version}-windows-setup.${ext}"
-    },
-    "mac": {
-      "target": "dmg",
-      "icon": "build/icon.png",
-      "artifactName": "${productName}-${version}-mac.${ext}"
     },
     "nsis": {
       "oneClick": false,
