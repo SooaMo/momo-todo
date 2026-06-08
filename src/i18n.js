@@ -127,6 +127,7 @@ export const translations = {
     alarmAdd: '+ Add alarm',
     alarmBefore: 'before',
     alarmDefault: 'Default',
+    overdue: 'Overdue',
     dateLabel: (month, day, dow) => `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month]} ${day}, ${dow}`,
 
   },
@@ -259,6 +260,7 @@ export const translations = {
     alarmAdd: '+ 알람 추가',
     alarmBefore: '전',
     alarmDefault: '기본',
+    overdue: '지남',
     dateLabel: (month, day, dow) => {
   const dowKr = ['일','월','화','수','목','금','토']
   const dowIndex = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(dow)

@@ -55,46 +55,46 @@ function formatMemoWithLinks(text) {
   })
 }
 
-function getUrgencyBorder(todo, todayStr) {
+function getUrgencyBorder(todo, todayStr, lang) {
+  const t = getT(lang)
   const isCompleted = todo.type === 'date'
     ? !!(todo.completions && Object.keys(todo.completions).length > 0)
     : !!(todo.completions?.[todayStr])
   if (isCompleted) return null
 
-  const now = new Date()
+  // 로컬 시간 기준 오늘 자정
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
   if (todo.type === 'one-time' && todo.dueDate) {
     const [y, m, d] = todo.dueDate.split('-').map(Number)
     const due = new Date(y, m-1, d)
-    if (todo.time) {
-      const [h, min] = todo.time.split(':').map(Number)
-      due.setHours(h, min, 0, 0)
-    } else {
-      due.setHours(23, 59, 0, 0)
-    }
-    const diffMins = Math.floor((due - now) / (1000 * 60))
-    if (diffMins <= 0)         return { color: 'var(--color-urgency-high)', width: '6px', bg: 'var(--color-urgency-bg-high)', badge: 'D-day' }
-if (diffMins <= 60)        return { color: 'var(--color-urgency-high)', width: '6px', bg: 'var(--color-urgency-bg-high)', badge: 'D-day' }
-if (diffMins <= 60 * 24)   return { color: 'var(--color-urgency-mid)',  width: '4px', bg: 'var(--color-urgency-bg-mid)',  badge: 'D-1' }
-if (diffMins <= 60 * 24 * 3) return { color: 'var(--color-urgency-low)', width: '3px', bg: 'var(--color-urgency-bg-low)', badge: `D-${Math.ceil(diffMins / (60 * 24))}` }
+    due.setHours(0, 0, 0, 0)
+    const diffDays = Math.floor((due - today) / (1000 * 60 * 60 * 24))
+
+    if (diffDays < 0)   return { color: 'var(--color-urgency-high)', width: '6px', bg: 'var(--color-urgency-bg-high)', badge: t.overdue }
+    if (diffDays === 0) return { color: 'var(--color-urgency-high)', width: '6px', bg: 'var(--color-urgency-bg-high)', badge: 'D-day' }
+    if (diffDays === 1) return { color: 'var(--color-urgency-mid)',  width: '4px', bg: 'var(--color-urgency-bg-mid)',  badge: 'D-1' }
+    if (diffDays <= 3)  return { color: 'var(--color-urgency-low)', width: '3px', bg: 'var(--color-urgency-bg-low)', badge: `D-${diffDays}` }
   }
 
   if (todo.type === 'date' && todo.endDate) {
     const [y, m, d] = todo.endDate.split('-').map(Number)
     const end = new Date(y, m-1, d)
-    const diffDays = Math.floor((end - now) / (1000 * 60 * 60 * 24))
-    if (diffDays < 0)  return { color: 'var(--color-urgency-high)', width: '6px', bg: 'var(--color-urgency-bg-high)', badge: '지남' }
-if (diffDays === 0) return { color: 'var(--color-urgency-high)', width: '6px', bg: 'var(--color-urgency-bg-high)', badge: 'D-day' }
-if (diffDays === 1) return { color: 'var(--color-urgency-mid)',  width: '4px', bg: 'var(--color-urgency-bg-mid)',  badge: 'D-1' }
-if (diffDays <= 3)  return { color: 'var(--color-urgency-low)', width: '3px', bg: 'var(--color-urgency-bg-low)', badge: `D-${diffDays}` }
+    end.setHours(0, 0, 0, 0)
+    const diffDays = Math.floor((end - today) / (1000 * 60 * 60 * 24))
+
+    if (diffDays < 0)   return { color: 'var(--color-urgency-high)', width: '6px', bg: 'var(--color-urgency-bg-high)', badge: t.overdue }
+    if (diffDays === 0) return { color: 'var(--color-urgency-high)', width: '6px', bg: 'var(--color-urgency-bg-high)', badge: 'D-day' }
+    if (diffDays === 1) return { color: 'var(--color-urgency-mid)',  width: '4px', bg: 'var(--color-urgency-bg-mid)',  badge: 'D-1' }
+    if (diffDays <= 3)  return { color: 'var(--color-urgency-low)', width: '3px', bg: 'var(--color-urgency-bg-low)', badge: `D-${diffDays}` }
   }
 
   if (todo.type === 'daily' || todo.type === 'weekly') {
-    const hours = now.getHours()
+    const hours = new Date().getHours()
     if (hours >= 23) return { color: 'var(--color-urgency-high)', width: '6px' }
     if (hours >= 21) return { color: 'var(--color-urgency-mid)', width: '4px' }
   }
-
 
   return null
 }
@@ -137,7 +137,7 @@ function SortableTodoItem({ todo, done, expandedIds, setExpandedIds, handleToggl
     opacity: isDragging ? 0.3 : 1,
   }
 
- const urgency = !done ? getUrgencyBorder(todo, todayStr) : null
+ const urgency = !done ? getUrgencyBorder(todo, todayStr, lang) : null
 
 return (
   <li
