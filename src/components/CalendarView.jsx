@@ -22,7 +22,9 @@ function isSameDay(a, b) {
 
 function isCompletedOnDate(todo, dateStr) {
   if (todo.type === 'date') {
-    return !!(todo.completions && Object.keys(todo.completions).length > 0)
+    return todo.repeatDaily
+      ? !!(todo.completions?.[dateStr])
+      : !!(todo.completions && Object.keys(todo.completions).length > 0)
   }
   return !!(todo.completions?.[dateStr])
 }
@@ -34,13 +36,15 @@ function getTodosForDate(todos, date, activeTypes) {
     if (!activeTypes.includes(todo.type)) return false
     if (todo.exceptions?.includes(dateStr)) return false
     if (todo.type === 'daily') {
-      if (todo.endDate && dateStr > todo.endDate) return false
-      return true
-    }
+    if (todo.startDate && dateStr < todo.startDate) return false  // ← 추가
+    if (todo.endDate && dateStr > todo.endDate) return false
+    return true
+  }
     if (todo.type === 'weekly') {
-      if (todo.endDate && dateStr > todo.endDate) return false
-      return todo.selectedDays?.includes(dayOfWeek)
-    }
+    if (todo.startDate && dateStr < todo.startDate) return false  // ← 추가
+    if (todo.endDate && dateStr > todo.endDate) return false
+    return todo.selectedDays?.includes(dayOfWeek)
+  }
     if (todo.type === 'date') return todo.startDate && todo.endDate && dateStr >= todo.startDate && dateStr <= todo.endDate
     if (todo.type === 'one-time') return todo.dueDate === dateStr
     return false
@@ -70,6 +74,7 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang, folders }) {
     return localStorage.getItem('momo-cal-completion-filter') || 'active'
   })
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [editTarget, setEditTarget] = useState(null) // { todo, dateStr }
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -142,6 +147,24 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang, folders }) {
     setTodos(prev => prev.filter(t => t.id !== todo.id))
     setDeleteTarget(null)
   }
+
+  const handleEditAll = (updated) => {
+  setTodos(prev => prev.map(t => t.id === updated.id ? updated : t))
+  setEditTarget(null)
+  }
+
+  const handleEditFromHere = (updated) => {
+  const { dateStr } = editTarget
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const prevDay = new Date(y, m-1, d-1)
+  const prevDayStr = formatDateStr(prevDay)
+  const newTodo = { ...updated, id: Date.now(), startDate: dateStr }
+  setTodos(prev => [
+    ...prev.map(t => t.id === editTarget.todo.id ? { ...t, endDate: prevDayStr } : t),
+    newTodo
+  ])
+  setEditTarget(null)
+}
 
   const buildMonthGrid = () => {
     const cells = []
@@ -539,7 +562,13 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang, folders }) {
                         <div className="todo-title-row">
                           <span className="todo-title">{todo.title}</span>
                           <div className="todo-actions">
-                            <button className="todo-edit" onClick={() => setEditTodo(todo)}>
+                            <button className="todo-edit" onClick={() => {
+                                if (todo.type === 'daily' || todo.type === 'weekly') {
+                                  setEditTarget({ todo, dateStr: selectedDateStr })
+                                } else {
+                                  setEditTodo(todo)
+                                }
+                              }}>
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -620,8 +649,47 @@ function CalendarView({ todos, setTodos, calView, setCalView, lang, folders }) {
         </div>
       )}
 
+      {editTarget && !editTodo && (
+        <div className="modal-overlay" onClick={() => setEditTarget(null)}>
+          <div className="modal cal-delete-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">{t.calEditTitle}</h2>
+              <button className="modal-close" onClick={() => setEditTarget(null)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="settings-data-desc">{t.calEditWarning}</p>
+              <button className="settings-help-btn" onClick={() => {
+                setEditTarget(prev => ({ ...prev, isFromHere: false }))
+                setEditTodo(editTarget.todo)
+              }}>
+                {t.calEditAll}
+              </button>
+              <button className="settings-help-btn" onClick={() => {
+                setEditTarget(prev => ({ ...prev, isFromHere: true }))
+                setEditTodo(editTarget.todo)
+              }}>
+                {t.calEditFromHere}
+              </button>
+            </div>
+          </div>
+        </div>
+)}
+
       {editTodo && (
-        <AddTodoModal onClose={() => setEditTodo(null)} onAdd={handleEdit} initialData={editTodo} lang={lang} />
+        <AddTodoModal
+          onClose={() => { setEditTodo(null); setEditTarget(null) }}
+          onAdd={editTarget ? (updated) => {
+            if (editTarget.isFromHere) handleEditFromHere(updated)
+            else handleEditAll(updated)
+          } : handleEdit}
+          initialData={editTodo}
+          lang={lang}
+        />
       )}
 
       <button className="cal-fab-btn" onClick={() => setShowAddModal(true)}>

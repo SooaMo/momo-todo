@@ -12,6 +12,7 @@ function StickerLayer({ pageKey, stickerMode }) {
   const [selectedId, setSelectedId] = useState(null)
   const [resizing, setResizing] = useState(null)
   const [rotating, setRotating] = useState(null)
+  const [dragging, setDragging] = useState(null) // { id, offsetX, offsetY }
   const layerRef = useRef(null)
   const pageKeyRef = useRef(pageKey)
   const isLoadingRef = useRef(false)
@@ -46,6 +47,27 @@ function StickerLayer({ pageKey, stickerMode }) {
     window.addEventListener('stickers-cleared', handleCleared)
     return () => window.removeEventListener('stickers-cleared', handleCleared)
   }, [pageKey])
+
+  // Drag (mouseMove 방식)
+  useEffect(() => {
+    if (!dragging) return
+    const handleMouseMove = (e) => {
+      const { id, offsetX, offsetY } = dragging
+      const rect = layerRef.current.getBoundingClientRect()
+      const x = e.clientX - rect.left - offsetX
+      const y = e.clientY - rect.top - offsetY
+      setStickers(prev => prev.map(s =>
+        s.id === id ? { ...s, x: Math.max(0, x), y: Math.max(0, y) } : s
+      ))
+    }
+    const handleMouseUp = () => setDragging(null)
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [dragging])
 
   // Resize
   useEffect(() => {
@@ -88,24 +110,31 @@ function StickerLayer({ pageKey, stickerMode }) {
     }
   }, [rotating])
 
+  // 키보드 방향키 미세조정
+  useEffect(() => {
+    if (!selectedId) return
+    const handleKeyDown = (e) => {
+      if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return
+      e.preventDefault()
+      const step = e.shiftKey ? 10 : 1
+      setStickers(prev => prev.map(s => {
+        if (s.id !== selectedId) return s
+        return {
+          ...s,
+          x: e.key === 'ArrowLeft' ? s.x - step : e.key === 'ArrowRight' ? s.x + step : s.x,
+          y: e.key === 'ArrowUp' ? s.y - step : e.key === 'ArrowDown' ? s.y + step : s.y,
+        }
+      }))
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedId])
+
+  // 라이브러리에서 드래그해서 새 스티커 드롭
   const handleDragOver = (e) => e.preventDefault()
 
   const handleDrop = (e) => {
     e.preventDefault()
-    const placedId = e.dataTransfer.getData('placed-sticker')
-    if (placedId) {
-      const id = parseInt(placedId)
-      const rect = layerRef.current.getBoundingClientRect()
-      const sticker = stickers.find(s => s.id === id)
-      if (!sticker) return
-      const px = sticker.size || DEFAULT_SIZE
-      const x = e.clientX - rect.left - px / 2
-      const y = e.clientY - rect.top - px / 2
-      setStickers(prev => prev.map(s =>
-        s.id === id ? { ...s, x: Math.max(0, x), y: Math.max(0, y) } : s
-      ))
-      return
-    }
     const data = e.dataTransfer.getData('sticker')
     if (data) {
       const { src } = JSON.parse(data)
@@ -123,15 +152,12 @@ function StickerLayer({ pageKey, stickerMode }) {
     }
   }
 
-  const handleStickerDragStart = (e, id) => {
-    e.dataTransfer.setData('placed-sticker', String(id))
-    setSelectedId(id)
-  }
-
   const handleDelete = (id) => {
     setStickers(prev => prev.filter(s => s.id !== id))
     setSelectedId(null)
   }
+
+
 
   const handleResizeStart = (e, sticker) => {
     e.stopPropagation()
@@ -169,11 +195,14 @@ function StickerLayer({ pageKey, stickerMode }) {
       ref={layerRef}
       className="sticker-layer"
       onClick={handleLayerClick}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       {stickers.map(sticker => {
         const px = sticker.size || DEFAULT_SIZE
         const isSelected = selectedId === sticker.id
         const rotation = sticker.rotation || 0
+        const isDraggingThis = dragging?.id === sticker.id
         return (
           <div
             key={sticker.id}
@@ -185,19 +214,42 @@ function StickerLayer({ pageKey, stickerMode }) {
               height: px,
               transform: `rotate(${rotation}deg)`,
               pointerEvents: stickerMode ? 'all' : 'none',
-              cursor: stickerMode ? 'grab' : 'default',
+              cursor: isDraggingThis ? 'grabbing' : stickerMode ? 'grab' : 'default',
             }}
-            draggable={stickerMode && !resizing && !rotating}
-            onDragStart={e => handleStickerDragStart(e, sticker.id)}
-            onClick={e => {
-              e.stopPropagation()
-              if (stickerMode) setSelectedId(isSelected ? null : sticker.id)
-            }}
+           onMouseDown={e => {
+  if (!stickerMode) return
+  if (e.target.closest('.sticker-handle')) return
+  e.stopPropagation()
+
+  const startX = e.clientX
+  const startY = e.clientY
+  const rect = layerRef.current.getBoundingClientRect()
+  const offsetX = e.clientX - rect.left - sticker.x
+  const offsetY = e.clientY - rect.top - sticker.y
+  let didDrag = false
+
+  const onMouseMove = (moveE) => {
+    if (!didDrag && (Math.abs(moveE.clientX - startX) > 5 || Math.abs(moveE.clientY - startY) > 5)) {
+      didDrag = true
+      setDragging({ id: sticker.id, offsetX, offsetY })
+    }
+  }
+  const onMouseUp = () => {
+    window.removeEventListener('mousemove', onMouseMove)
+    window.removeEventListener('mouseup', onMouseUp)
+    if (!didDrag) {
+      // 드래그 없이 클릭 → 선택/해제 토글
+      setSelectedId(prev => prev === sticker.id ? null : sticker.id)
+    }
+  }
+  window.addEventListener('mousemove', onMouseMove)
+  window.addEventListener('mouseup', onMouseUp)
+}}
           >
             <img
               src={sticker.src}
               alt="sticker"
-              style={{ width: '100%', height: '100%', objectFit: 'contain', userSelect: 'none' }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', userSelect: 'none', pointerEvents: 'none' }}
               draggable={false}
             />
             {isSelected && stickerMode && (
@@ -244,13 +296,7 @@ function StickerLayer({ pageKey, stickerMode }) {
         )
       })}
 
-      {stickerMode && (
-        <div
-          className="sticker-drop-hint"
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-        />
-      )}
+      {stickerMode && <div className="sticker-drop-hint" />}
     </div>
   )
 }

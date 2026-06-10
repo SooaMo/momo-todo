@@ -127,6 +127,10 @@ function AlarmSection({ type, alarmEnabled, setAlarmEnabled, alarms, setAlarms, 
 function AddTodoModal({ onClose, onAdd, initialData, lang, folders, defaultFolderId, allTodos, defaultType }) {
   const t = getT(lang)
   const isEdit = !!initialData
+  const todayStr = (() => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+})()
   const [title, setTitle] = useState(initialData?.title || '')
   const [type, setType] = useState(initialData?.type || defaultType || 'daily')
   const [priority, setPriority] = useState(initialData?.priority || 'mid')
@@ -144,6 +148,7 @@ function AddTodoModal({ onClose, onAdd, initialData, lang, folders, defaultFolde
   const [labelMode, setLabelMode] = useState(initialData?.label ? 'existing' : 'none')
   const [alarmEnabled, setAlarmEnabled] = useState(initialData?.alarmEnabled || false)
   const [alarms, setAlarms] = useState(initialData?.alarms || [])
+  const [repeatDaily, setRepeatDaily] = useState(initialData?.repeatDaily ?? true)
   const folderDropdownRef = useRef(null)
   const labelDropdownRef = useRef(null)
 
@@ -189,9 +194,10 @@ function AddTodoModal({ onClose, onAdd, initialData, lang, folders, defaultFolde
       type,
       priority,
       time: time || null,
-      dueDate: type === 'one-time' ? dueDate : null,
+      dueDate: type === 'one-time' ? (dueDate || todayStr) : null,
       startDate: type === 'date' ? startDate : null,
       endDate: type === 'date' ? endDate : null,
+      repeatDaily: type === 'date' ? repeatDaily : undefined,
       selectedDays: type === 'weekly' ? selectedDays : [],
       label: labelMode !== 'none' && labelText ? { text: labelText, color: labelColor } : null,
       memo: memo || null,
@@ -290,6 +296,15 @@ function AddTodoModal({ onClose, onAdd, initialData, lang, folders, defaultFolde
                 <span className="date-separator">~</span>
                 <input className="form-input" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
               </div>
+              {/* repeatDaily 추가 */}
+              <label className="startup-checkbox-row" style={{ marginTop: '0.4rem' }}>
+                <input
+                  type="checkbox"
+                  checked={repeatDaily}
+                  onChange={e => setRepeatDaily(e.target.checked)}
+                />
+                <span className="form-label">{t.repeatDaily}</span>
+              </label>
             </div>
           )}
 

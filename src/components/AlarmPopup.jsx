@@ -33,7 +33,9 @@ export function useAlarmChecker(todos, lang) {
 
     todos.forEach(todo => {
       const isCompletedToday = todo.type === 'date'
-        ? !!(todo.completions && Object.keys(todo.completions).length > 0)
+        ? (todo.repeatDaily
+            ? !!(todo.completions?.[todayStr])
+            : !!(todo.completions && Object.keys(todo.completions).length > 0))
         : !!(todo.completions?.[todayStr])
 
       // 커스텀 알람이 설정된 경우

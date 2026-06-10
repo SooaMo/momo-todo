@@ -139,6 +139,11 @@ export const translations = {
     alarmBefore: 'before',
     alarmDefault: 'Default',
     overdue: 'Overdue',
+    repeatDaily: 'Repeat daily during the period',
+    calEditTitle: 'Edit Event',
+    calEditWarning: 'Choose how you want to apply the changes.',
+    calEditAll: 'Edit all events',
+    calEditFromHere: 'Edit this and following',
     dateLabel: (month, day, dow) => `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month]} ${day}, ${dow}`,
 
   },
@@ -283,6 +288,11 @@ export const translations = {
     alarmBefore: '전',
     alarmDefault: '기본',
     overdue: '지남',
+    repeatDaily: '기간 중 매일 반복',
+    calEditTitle: '일정 편집',
+    calEditWarning: '변경사항을 어떻게 적용할지 선택해주세요.',
+    calEditAll: '전체 편집',
+    calEditFromHere: '이 날 이후 모두 편집',
     dateLabel: (month, day, dow) => {
   const dowKr = ['일','월','화','수','목','금','토']
   const dowIndex = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(dow)
