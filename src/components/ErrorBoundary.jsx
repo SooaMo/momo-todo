@@ -29,11 +29,11 @@ class ErrorBoundary extends Component {
   }
 
   handleReport = () => {
-    const version = 'v1.0.5'
+    const version = 'v1.0.6'
     const errorMsg = this.state.error?.toString() || 'Unknown error'
     const subject = encodeURIComponent(`MomoTodo ${version} Error Report`)
     const body = encodeURIComponent(`Version: ${version}\n\nError:\n${errorMsg}\n\nWhat I was doing:\n(please describe what you did before this happened)`)
-    window.electronAPI?.openExternal(`mailto:sooa24@gmail.com?subject=${subject}&body=${body}`)
+    window.electronAPI?.openExternal(`mailto:harvest0505@gmail.com?subject=${subject}&body=${body}`)
   }
 
   render() {
