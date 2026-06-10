@@ -1,7 +1,7 @@
 {
   "name": "momo-todo",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.0.6",
   "main": "electron.cjs",
   "scripts": {
     "dev": "vite",
