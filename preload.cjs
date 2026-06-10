@@ -20,4 +20,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onCheckAlarms: (callback) => ipcRenderer.on('check-alarms', callback),
   showNotification: (data) => ipcRenderer.invoke('show-notification', data),
   getLoginItemStatus: () => ipcRenderer.invoke('get-login-item-status'),
+  isAlwaysOnTop: () => ipcRenderer.invoke('is-always-on-top'),
 })

@@ -92,6 +92,12 @@ function App() {
   }, [lang])
 
   useEffect(() => {
+  window.electronAPI?.isAlwaysOnTop?.().then(val => {
+    if (val !== undefined) setAlwaysOnTop(val)
+  })
+}, [])
+
+  useEffect(() => {
     window.electronAPI?.onShowStartupPrompt(() => setShowStartupPrompt(true))
     window.electronAPI?.onShowHelp(() => setShowHelp(true))
     window.electronAPI?.onUpdateAvailable(() => setHasUpdate(true))

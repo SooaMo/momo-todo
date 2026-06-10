@@ -16,6 +16,8 @@ function BannerImage({ imageKey, className, onOpenSettings }) {
   const textFont = localStorage.getItem(`${imageKey}-text-font`) || 'Pretendard'
   const bgColor = localStorage.getItem(`${imageKey}-bg-color`) || 'var(--color-secondary)'
   const bgColorCustom = localStorage.getItem(`${imageKey}-bg-color-custom`) || '#ffffff' 
+  const height = parseInt(localStorage.getItem(`${imageKey}-height`) || '80')
+  const textSize = parseFloat(localStorage.getItem(`${imageKey}-text-size`) || '1.2')
 
   const resolvedBgColor = bgColor === 'custom'
   ? bgColorCustom
@@ -25,27 +27,32 @@ function BannerImage({ imageKey, className, onOpenSettings }) {
 
   const src = saved || catImg
 
-  const getBgStyle = () => {
-    const base = {
-      backgroundImage: `url(${src})`,
-      backgroundRepeat: 'no-repeat',
-      backgroundColor: resolvedBgColor || undefined,
-    }
-    if (resize === 'tile') return { ...base, backgroundSize: 'auto', backgroundRepeat: 'repeat', backgroundPosition: 'center' }
-    if (resize === 'fit') return { ...base, backgroundSize: 'contain', backgroundPosition: position }
-    return { ...base, backgroundSize: 'cover', backgroundPosition: position }
+  const focusX = parseFloat(localStorage.getItem(`${imageKey}-focus-x`) || '50')
+const focusY = parseFloat(localStorage.getItem(`${imageKey}-focus-y`) || '50')
+const zoom = parseFloat(localStorage.getItem(`${imageKey}-zoom`) || '100')
+
+const getBgStyle = () => {
+  const base = {
+    backgroundImage: `url(${src})`,
+    backgroundRepeat: 'no-repeat',
+    backgroundColor: resolvedBgColor || undefined,
+    height: `${height}px`,
   }
+  if (resize === 'tile') return { ...base, backgroundSize: 'auto', backgroundRepeat: 'repeat', backgroundPosition: 'center' }
+  return { ...base, backgroundSize: `${zoom}%`, backgroundPosition: `${focusX}% ${focusY}%` }
+}
 
   const getTextStyle = () => {
-    const base = {
-      position: 'absolute',
-      top: '50%',
-      color: textColor,
-    }
-    if (textPosition === 'center') return { ...base, left: '50%', transform: 'translateY(-50%) translateX(-50%)', textAlign: 'center', width: '80%' }
-    if (textPosition === 'right') return { ...base, right: '1rem', textAlign: 'right', transform: 'translateY(-50%)' }
-    return { ...base, left: '1rem', textAlign: 'left', transform: 'translateY(-50%)' }
-  }
+  const textPositionV = localStorage.getItem(`${imageKey}-text-position-v`) || 'center'
+  const vTop = textPositionV === 'top' ? { top: '0.5rem', transform: 'none' }
+    : textPositionV === 'bottom' ? { bottom: '0.5rem', top: 'auto', transform: 'none' }
+    : { top: '50%' }
+  const vTransform = textPositionV === 'center' ? 'translateY(-50%)' : 'none'
+
+  if (textPosition === 'center') return { position: 'absolute', color: textColor, left: '50%', textAlign: 'center', width: '80%', ...vTop, transform: textPositionV === 'center' ? 'translate(-50%, -50%)' : 'translateX(-50%)' }
+  if (textPosition === 'right') return { position: 'absolute', color: textColor, right: '1rem', textAlign: 'right', ...vTop, transform: vTransform }
+  return { position: 'absolute', color: textColor, left: '1rem', textAlign: 'left', ...vTop, transform: vTransform }
+}
 
   const handleUpload = (e) => {
     const file = e.target.files[0]
@@ -71,8 +78,8 @@ function BannerImage({ imageKey, className, onOpenSettings }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {text && (
-        <div className="banner-text" style={{ ...getTextStyle(), fontFamily: textFont }}>
+      {text && text.trim() && (
+        <div className="banner-text" style={{ ...getTextStyle(), fontFamily: textFont, fontSize: `${textSize}rem` }}>
           {text}
         </div>
       )}

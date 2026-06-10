@@ -7,6 +7,8 @@ const FONT_OPTIONS = [
   { id: 'Pretendard', label: 'Pretendard' },
   { id: 'Playfair Display', label: 'Playfair' },
   { id: 'Caveat', label: 'Caveat' },
+  { id: 'Dancing Script', label: 'Dancing' },
+  { id: 'Noto Serif KR', label: 'Noto Serif' },
 ]
 const TEXT_COLORS = [
   { label: 'White', value: '#ffffff' },
@@ -14,6 +16,7 @@ const TEXT_COLORS = [
   { label: 'Primary', value: 'var(--color-primary)' },
   { label: 'Accent', value: 'var(--color-accent)' },
 ]
+
 const BG_COLORS = [
   { label: 'None', value: 'none' },
   { label: 'Theme', value: 'var(--color-secondary)' },
@@ -41,8 +44,15 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange, lang }) {
     { id: 'center', label: t.posCenter },
     { id: 'right', label: t.posRight },
   ]
+  const TEXT_POSITION_V_OPTIONS = [
+  { id: 'top', label: t.posTop },
+  { id: 'center', label: t.posCenter },
+  { id: 'bottom', label: t.posBottom },
+]
   const inputRef = useRef(null)
   const colorInputRef = useRef(null)
+  const previewRef = useRef(null)
+  const dragRef = useRef(null)
 
   const visible = settings[`${imageKey}-visible`] !== false
   const position = settings[`${imageKey}-position`] || 'right'
@@ -71,6 +81,12 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange, lang }) {
 
   const handleRemove = () => onSettingsChange({ [imageKey]: null })
   const handleToggleVisible = () => onSettingsChange({ [`${imageKey}-visible`]: !visible })
+  const height = settings[`${imageKey}-height`] || 80
+  const textSize = settings[`${imageKey}-text-size`] || 1.2
+  const textPositionV = settings[`${imageKey}-text-position-v`] || 'center'
+  const focusX = settings[`${imageKey}-focus-x`] ?? 50
+  const focusY = settings[`${imageKey}-focus-y`] ?? 50
+  const zoom = settings[`${imageKey}-zoom`] ?? 100
 
   return (
     <div className="settings-banner-section">
@@ -84,14 +100,64 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange, lang }) {
       {visible && (
         <div className="settings-banner-controls">
           {/* Preview */}
-          <div className="settings-banner-preview" style={{
-            backgroundImage: image ? `url(${image})` : undefined,
-            backgroundColor: resolvedBgColor || (image ? undefined : 'var(--color-secondary)'),
-            backgroundSize: resize === 'fit' ? 'contain' : resize === 'tile' ? 'auto' : 'cover',
-            backgroundRepeat: resize === 'tile' ? 'repeat' : 'no-repeat',
-            backgroundPosition: position,
-          }}>
+          <div
+            ref={previewRef}
+            className="settings-banner-preview"
+            style={{
+              backgroundImage: image ? `url(${image})` : undefined,
+              backgroundColor: resolvedBgColor || (image ? undefined : 'var(--color-secondary)'),
+              backgroundRepeat: resize === 'tile' ? 'repeat' : 'no-repeat',
+              backgroundPosition: resize === 'tile' ? 'center' : `${focusX}% ${focusY}%`,
+              backgroundSize: resize === 'tile' ? 'auto' : `${zoom}%`,
+              height: `${height}px`,
+              cursor: resize !== 'tile' ? 'move' : 'default',
+            }}
+            onMouseDown={e => {
+              if (resize === 'tile') return
+              dragRef.current = { startX: e.clientX, startY: e.clientY, startFX: focusX, startFY: focusY }
+              const onMove = (me) => {
+                const rect = previewRef.current.getBoundingClientRect()
+                const dx = (me.clientX - dragRef.current.startX) / rect.width * 100
+                const dy = (me.clientY - dragRef.current.startY) / rect.height * 100
+                onSettingsChange({
+                  [`${imageKey}-focus-x`]: Math.max(0, Math.min(100, dragRef.current.startFX - dx)),
+                  [`${imageKey}-focus-y`]: Math.max(0, Math.min(100, dragRef.current.startFY - dy)),
+                })
+              }
+              const onUp = () => {
+                window.removeEventListener('mousemove', onMove)
+                window.removeEventListener('mouseup', onUp)
+              }
+              window.addEventListener('mousemove', onMove)
+              window.addEventListener('mouseup', onUp)
+            }}
+          >
             {!image && !resolvedBgColor && <span className="settings-banner-empty">No custom image</span>}
+            {text && text.trim() && (
+              <span style={{
+                position: 'absolute',
+                color: textColor,
+                fontFamily: textFont,
+                fontSize: `${textSize * 0.6}rem`,
+                pointerEvents: 'none',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                maxWidth: '90%',
+                textOverflow: 'ellipsis',
+                ...(textPositionV === 'top'
+                  ? { top: '0.3rem' } : textPositionV === 'bottom'
+                  ? { bottom: '0.3rem', top: 'auto' } : { top: '50%' }
+                ),
+                ...(textPosition === 'center'
+                  ? { left: '50%', transform: textPositionV === 'center' ? 'translate(-50%, -50%)' : 'translateX(-50%)', textAlign: 'center' }
+                  : textPosition === 'right'
+                  ? { right: '0.5rem', transform: textPositionV === 'center' ? 'translateY(-50%)' : 'none' }
+                  : { left: '0.5rem', transform: textPositionV === 'center' ? 'translateY(-50%)' : 'none' }
+                ),
+              }}>
+                {text}
+              </span>
+            )}
           </div>
 
           {/* Upload / Reset */}
@@ -115,21 +181,59 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange, lang }) {
             )}
           </div>
 
-          {/* Position */}
           <div className="settings-position">
-            <span className="settings-position-label">{t.position}</span>
-            <div className="settings-position-btns">
-              {POSITION_OPTIONS.map(p => (
-                <button
-                  key={p.id}
-                  className={`settings-pos-btn ${position === p.id ? 'active' : ''}`}
-                  onClick={() => onSettingsChange({ [`${imageKey}-position`]: p.id })}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
+        <span className="settings-position-label">{t.bannerHeight}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <input
+            type="range"
+            min={40}
+            max={200}
+            value={height}
+            onChange={e => onSettingsChange({ [`${imageKey}-height`]: parseInt(e.target.value) })}
+            style={{ flex: 1 }}
+          />
+          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-light)', minWidth: '2.5rem' }}>{height}px</span>
+        </div>
+      </div>
+
+      {resize !== 'tile' && (
+      <div className="settings-position">
+        <span className="settings-position-label">{t.bannerZoom}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <input
+            type="range"
+            min={30}
+            max={300}
+            value={zoom}
+            onChange={e => onSettingsChange({ [`${imageKey}-zoom`]: parseFloat(e.target.value) })}
+            style={{ flex: 1 }}
+          />
+          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-light)', minWidth: '2.5rem' }}>{zoom}%</span>
+        </div>
+      </div>
+    )}
+{resize !== 'tile' && (
+  <p style={{ fontSize: '0.72rem', color: 'var(--color-text-light)' }}>
+    {t.dragToReposition}
+  </p>
+)}
+          {/* Position */}
+          {resize === 'tile' && (
+              <div className="settings-position">
+                <span className="settings-position-label">{t.position}</span>
+                <div className="settings-position-btns">
+                  {POSITION_OPTIONS.map(p => (
+                    <button
+                      key={p.id}
+                      className={`settings-pos-btn ${position === p.id ? 'active' : ''}`}
+                      onClick={() => onSettingsChange({ [`${imageKey}-position`]: p.id })}
+                    >
+                      {p.label}
+                    </button>
+                        ))}
+                </div>
+              </div>
+            )}
 
           {/* Resize */}
           <div className="settings-position">
@@ -238,6 +342,22 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange, lang }) {
             </div>
           </div>
 
+          <div className="settings-position">
+            <span className="settings-position-label">{t.textPositionV}</span>
+            <div className="settings-position-btns">
+              {TEXT_POSITION_V_OPTIONS.map(p => (
+                <button
+                  key={p.id}
+                  className={`settings-pos-btn ${textPositionV === p.id ? 'active' : ''}`}
+                  onClick={() => onSettingsChange({ [`${imageKey}-text-position-v`]: p.id })}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+
           {/* Text color */}
           <div className="settings-position">
             <span className="settings-position-label">{t.textColor}</span>
@@ -259,6 +379,23 @@ function BannerSetting({ imageKey, label, settings, onSettingsChange, lang }) {
               ))}
             </div>
           </div>
+
+          <div className="settings-position">
+          <span className="settings-position-label">{t.textSize}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <input
+              type="range"
+              min={0.7}
+              max={2.0}
+              step={0.1}
+              value={textSize}
+              onChange={e => onSettingsChange({ [`${imageKey}-text-size`]: parseFloat(e.target.value) })}
+              style={{ flex: 1 }}
+            />
+            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-light)', minWidth: '2.5rem' }}>{textSize}rem</span>
+          </div>
+        </div>
+
         </div>
       )}
       <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUpload} />
@@ -474,6 +611,12 @@ useEffect(() => {
     'momo-banner-top-text-font': localStorage.getItem('momo-banner-top-text-font') || 'Pretendard',
     'momo-banner-top-bg-color': localStorage.getItem('momo-banner-top-bg-color') || 'var(--color-secondary)',
     'momo-banner-top-bg-color-custom': localStorage.getItem('momo-banner-top-bg-color-custom') || '#ffffff',
+    'momo-banner-top-height': parseInt(localStorage.getItem('momo-banner-top-height') || '80'),
+    'momo-banner-top-text-size': parseFloat(localStorage.getItem('momo-banner-top-text-size') || '1.2'),
+    'momo-banner-top-text-position-v': localStorage.getItem('momo-banner-top-text-position-v') || 'center',
+    'momo-banner-top-focus-x': parseFloat(localStorage.getItem('momo-banner-top-focus-x') || '50'),
+    'momo-banner-top-focus-y': parseFloat(localStorage.getItem('momo-banner-top-focus-y') || '50'),
+    'momo-banner-top-zoom': parseFloat(localStorage.getItem('momo-banner-top-zoom') || '100'),
   }))
 
   const handleSettingsChange = (updates) => {
@@ -547,7 +690,7 @@ useEffect(() => {
                 <div style={{ width: '1px', backgroundColor: 'var(--color-secondary)', alignSelf: 'stretch' }} />
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span className="settings-banner-label">{lang === 'kr' ? '시작 시 자동 실행' : 'Launch on startup'}</span>
+                  <span className="settings-banner-label">{t.launchOnStartup} </span>
                   <StartupSection lang={lang} />
                 </div>
               </div>

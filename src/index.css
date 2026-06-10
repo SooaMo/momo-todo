@@ -1,5 +1,5 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Caveat:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Caveat:wght@400;600&family=Dancing+Script:wght@400;600&family=Nunito:wght@400;600&family=Noto+Serif+KR:wght@400;600&display=swap');
 
 /* ══════════════════════════════════════
    ROOT & RESET
@@ -175,7 +175,7 @@ button, input, select, textarea { font-family: inherit; }
   align-items: center;
   justify-content: center;
 }
-.topbar-btn:hover { background-color: rgba(0,0,0,0.1); }
+.topbar-btn:hover { background-color: rgba(0,0,0,0.18); }
 .close-btn:hover { background-color: #DC9B9B !important; color: white; }
 
 .pin-btn.pin-active { background-color: rgba(0,0,0,0.1); }
@@ -983,6 +983,7 @@ button, input, select, textarea { font-family: inherit; }
   border: 1px solid var(--color-secondary);
   outline: 2px solid var(--color-primary);
   outline-offset: 1px;
+  position: relative;
 }
 .settings-banner-empty { font-size: 0.75rem; color: var(--color-text-light); }
 .settings-banner-btns { display: flex; gap: 0.4rem; }
@@ -1421,3 +1422,22 @@ button, input, select, textarea { font-family: inherit; }
 .error-boundary-desc { font-size: 0.85rem; color: var(--color-text-light); line-height: 1.5; }
 .error-boundary-code { font-size: 0.75rem; color: var(--color-accent); background: var(--color-secondary); padding: 0.5rem; border-radius: var(--radius-md); word-break: break-all; }
 .error-boundary-actions { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
+
+/* ══════════════════════════════════════
+   HOVER 강화
+══════════════════════════════════════ */
+.topbar-btn:hover { background-color: rgba(0,0,0,0.18); }
+.tab-btn:hover { background-color: var(--color-secondary); filter: brightness(0.88); }
+.settings-pos-btn:hover { background-color: var(--color-secondary); filter: brightness(0.88); }
+.settings-sm-btn:hover { background-color: var(--color-secondary); filter: brightness(0.88); }
+.settings-help-btn:hover { background-color: var(--color-secondary); filter: brightness(0.88); }
+.settings-theme-btn:hover { background-color: var(--color-secondary); filter: brightness(0.88); }
+.update-btn:hover { background-color: var(--color-secondary); filter: brightness(0.88); }
+.cal-filter-item:hover { background-color: var(--color-secondary); filter: brightness(0.88); }
+.todo-dropdown-item:hover { background-color: var(--color-secondary); filter: brightness(0.88); }
+.priority-dropdown-item:hover { background-color: var(--color-bg); filter: brightness(0.92); }
+.todo-edit:hover { color: var(--color-primary); }
+.todo-delete:hover { color: var(--color-accent); }
+.btn-cancel:hover { background-color: var(--color-secondary); filter: brightness(0.88); }
+.add-btn:hover { opacity: 1; filter: brightness(0.88); }
+.btn-submit:hover:not(:disabled) { opacity: 1; filter: brightness(0.88); }

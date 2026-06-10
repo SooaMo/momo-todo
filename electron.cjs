@@ -238,3 +238,5 @@ ipcMain.handle('get-app-version', () => app.getVersion())
 ipcMain.handle('get-login-item-status', () => {
   return app.getLoginItemSettings().openAtLogin
 })
+
+ipcMain.handle('is-always-on-top', () => mainWindow.isAlwaysOnTop())
