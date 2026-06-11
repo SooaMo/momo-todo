@@ -527,14 +527,15 @@ function TodoList({ todos, setTodos, folders, setFolders, lang, onOpenSettings }
   const handleEdit = (updated) => setTodos(prev => prev.map(t => t.id === updated.id ? updated : t))
 
   const handleToggle = (id) => {
-    setTodos(prev => prev.map(t => {
-      if (t.id !== id) return t
-      const completions = { ...t.completions }
-      if (completions[todayStr]) delete completions[todayStr]
-      else completions[todayStr] = true
-      return { ...t, completions }
-    }))
-  }
+  setTodos(prev => prev.map(t => {
+    if (t.id !== id) return t
+    const completions = { ...t.completions }
+    const key = t.type === 'one-time' && t.dueDate ? t.dueDate : todayStr
+    if (completions[key]) delete completions[key]
+    else completions[key] = true
+    return { ...t, completions }
+  }))
+}
 
   const handleArchive = (id) => {
     const todo = todos.find(t => t.id === id)
